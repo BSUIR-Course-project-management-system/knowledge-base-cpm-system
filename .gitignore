@@ -1,0 +1,13 @@
+# Ignoring MacOS service files
+.DS_Store
+
+# Ignore python venv
+.venv/
+venv/
+ENV/
+
+# Ignore pycache
+__pycache__/
+
+# Ignore IDE
+.idea/
