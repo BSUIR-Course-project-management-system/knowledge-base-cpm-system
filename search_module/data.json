@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1",
+    "text": "C++ backend разработка API серверов",
+    "metadata": {
+      "cat": "tech"
+    }
+  },
+  {
+    "id": "2",
+    "text": "Python ChromaDB векторный поиск",
+    "metadata": {
+      "cat": "tech"
+    }
+  },
+  {
+    "id": "3",
+    "text": "Machine Learning алгоритмы KNN",
+    "metadata": {
+      "cat": "ml"
+    }
+  },
+  {
+    "id": "4",
+    "text": "PostgreSQL оптимизация запросов",
+    "metadata": {
+      "cat": "db"
+    }
+  }
+]
