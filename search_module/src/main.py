@@ -3,11 +3,10 @@ import logging
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-from search_module.settings import PATH_TO_TEST_JSON
-from settings import PATH_TO_MODEL, PATH_TO_CHROMA_DB
-from loader import JsonLoader, BaseLoader
-from theme_finder import ThemeFinder
-from data_manager import DataManager
+from search_module.src.settings import PATH_TO_MODEL, PATH_TO_CHROMA_DB, PATH_TO_TEST_JSON
+from search_module.src.loader import JsonLoader, BaseLoader
+from search_module.src.theme_finder import ThemeFinder
+from search_module.src.data_manager import DataManager
 
 
 def main():

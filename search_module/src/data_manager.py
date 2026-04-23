@@ -1,7 +1,7 @@
 import chromadb
 
-from settings import PATH_TO_CHROMA_DB
-from loader import BaseLoader
+from search_module.src.settings import PATH_TO_CHROMA_DB
+from search_module.src.loader import BaseLoader
 
 
 class DataManager:
