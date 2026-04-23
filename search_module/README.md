@@ -10,3 +10,9 @@
 * Python
 * chromadb
 * sentence-transformers
+
+## Структура:
+
+С полной структурой проекта можно ознакомится в файле **structure.txt**.
+
+

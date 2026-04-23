@@ -1,0 +1,13 @@
+search_module/
+    ├── .venv/
+    ├── chroma_db/
+    ├── models/
+    ├── data.json
+    ├── data_manager.py
+    ├── loader.py
+    ├── main.py
+    ├── README.md
+    ├── requirements.txt
+    ├── settings.py
+    ├── structure.txt
+    └── theme_finder.py
