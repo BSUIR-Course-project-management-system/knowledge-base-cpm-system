@@ -6,7 +6,7 @@ from search_module.src.data_manager import DataManager
 
 class ThemeFinder:
     def __init__(self, data_manager: DataManager) -> None:
-        self.model = SentenceTransformer(PATH_TO_MODEL)
+        self.model = SentenceTransformer(str(PATH_TO_MODEL))
         self.data_manager = data_manager
 
     def make_collection(self) -> None:
