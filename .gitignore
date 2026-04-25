@@ -12,3 +12,7 @@ __pycache__/
 # Ignore IDE
 .idea/
 .vscode/
+
+# Ignore credential files
+# ! WARNING VERY IMPORTANT IGNORE
+*credentials.json
