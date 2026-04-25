@@ -1,10 +1,9 @@
 import os
 import logging
 import chromadb
-from sentence_transformers import SentenceTransformer
 
-from search_module.src.settings import PATH_TO_MODEL, PATH_TO_CHROMA_DB, PATH_TO_TEST_JSON
-from search_module.src.loader import JsonLoader, BaseLoader
+from search_module.src.settings import PATH_TO_TEST_JSON
+from search_module.src.loader import JsonLoader
 from search_module.src.theme_finder import ThemeFinder
 from search_module.src.data_manager import DataManager
 
@@ -14,10 +13,16 @@ def main():
     data_manager = DataManager(loader)
 
     data_manager.load(PATH_TO_TEST_JSON)
-    theme_finder_init = ThemeFinder(data_manager)
-    theme_finder_init.make_collection()
+
+    
+    is_free_theme = input("Вы  хотите выбрать тему или просмотреть все подходящие темы(y/n)? ")
+    if is_free_theme.lower() == 'y':
+        data_manager.filter_by_occupancy()
+        print("Темы отобраны")
 
     theme_finder = ThemeFinder(data_manager)
+    theme_finder.make_collection()
+
     print("Система готова к поиску.")
 
     while True:

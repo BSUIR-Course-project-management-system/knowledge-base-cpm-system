@@ -13,3 +13,8 @@ class DataManager:
 
     def load(self, path: str) -> None:
         self.data = self.loader.load(path)
+
+    def filter_by_occupancy(self):
+        print(f"до фильтрации {len(self.data)}")
+        self.data = [item for item in self.data if not item.get('is_used')]
+        print(f"после фильтрации {len(self.data)}")

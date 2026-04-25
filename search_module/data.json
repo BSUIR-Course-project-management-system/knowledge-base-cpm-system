@@ -2,29 +2,21 @@
   {
     "id": "1",
     "text": "C++ backend разработка API серверов",
-    "metadata": {
-      "cat": "tech"
-    }
+    "is_used": true
   },
   {
     "id": "2",
     "text": "Python ChromaDB векторный поиск",
-    "metadata": {
-      "cat": "tech"
-    }
+    "is_used": false
   },
   {
     "id": "3",
     "text": "Machine Learning алгоритмы KNN",
-    "metadata": {
-      "cat": "ml"
-    }
-  },
+    "is_used": false
+  }, 
   {
     "id": "4",
     "text": "PostgreSQL оптимизация запросов",
-    "metadata": {
-      "cat": "db"
-    }
+    "is_used": false
   }
 ]
