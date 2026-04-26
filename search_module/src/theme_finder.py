@@ -7,11 +7,15 @@ from search_module.src.settings import PATH_TO_MODEL
 
 
 class ThemeFinder:
+    """Класс для поиска тем"""
+
     def __init__(self, data_manager: DataManager) -> None:
+        """Функция инициализации"""
         self.model = SentenceTransformer(str(PATH_TO_MODEL))
         self.data_manager = data_manager
 
     def make_collection(self) -> None:
+        """Функция формирования векторов поиска"""
         if not self.data_manager.data:
             print("Данные не загружены. Сначала вызовите data_manager.load()")
             return
@@ -41,6 +45,7 @@ class ThemeFinder:
         print("База данных успешно заполнена!")
 
     def search(self, query: str, n_results: int = 4) -> Any:
+        """Функция векторного поиска"""
         query_emb = self.model.encode([query], show_progress_bar=False).tolist()
         results = self.data_manager.collection.query(
             query_embeddings=query_emb,
