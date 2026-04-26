@@ -1,27 +1,15 @@
 from datetime import datetime, timedelta
-from typing import List, Dict
-from datetime_parser import DatetimeParser
-from config_parser import YamlParser
-from schedule_generator import SheduleGenerator
+from .datetime_parser import DatetimeParser
+from .config_parser import YamlParser
+from .schedule_generator import SheduleGenerator
+from table_api.storage import Storage
+import json
 
-
-# Заглушка
-def get_occupied_slots_from_api(reviewer_name: str) -> List[Dict]:
-    demo_data = {
-        "Иванов Иван": [
-            {"start": "2026-10-05T10:00:00", "end": "2026-10-05T10:30:00"},
-            {"start": "2026-10-05T14:00:00", "end": "2026-10-05T14:30:00"},
-            {"start": "2026-11-15T09:00:00", "end": "2026-11-15T09:30:00"},
-        ],
-        "Петров Пётр": [
-            {"start": "2026-10-10T11:00:00", "end": "2026-10-10T11:30:00"},
-        ],
-    }
-    return demo_data.get(reviewer_name, [])
 
 
 def main():
     config_parser = YamlParser()
+    storage = Storage()
     sg = SheduleGenerator(config_parser)
     
     print("=== Планирование опроцентовок ===")
@@ -40,7 +28,8 @@ def main():
         print("Ошибка: конечная дата должна быть позже начальной.")
         return
 
-    occupied_dict_list = get_occupied_slots_from_api(reviewer_name)
+    data = json.loads(storage.get_examiner_schedule(reviewer_name))
+    occupied_dict_list = data["Milestone_1"] + data["Milestone_2"] + data["Milestone_3"]
     occupied_intervals = []
     for item in occupied_dict_list:
         occ_start = DatetimeParser.parse_iso(item["start"])

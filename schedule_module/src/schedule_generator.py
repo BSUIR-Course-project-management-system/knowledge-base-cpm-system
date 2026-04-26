@@ -1,4 +1,4 @@
-from config_parser import BaseParser
+from .config_parser import BaseParser
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 
