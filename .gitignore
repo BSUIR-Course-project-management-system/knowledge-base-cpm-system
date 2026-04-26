@@ -2,7 +2,7 @@
 .DS_Store
 
 # Ignore python venv
-.venv/
+**.venv/
 venv/
 ENV/
 

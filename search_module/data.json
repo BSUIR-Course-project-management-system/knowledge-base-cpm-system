@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1",
+    "text": "C++ backend разработка API серверов",
+    "is_used": true
+  },
+  {
+    "id": "2",
+    "text": "Python ChromaDB векторный поиск",
+    "is_used": false
+  },
+  {
+    "id": "3",
+    "text": "Machine Learning алгоритмы KNN",
+    "is_used": false
+  }, 
+  {
+    "id": "4",
+    "text": "PostgreSQL оптимизация запросов",
+    "is_used": false
+  }
+]
