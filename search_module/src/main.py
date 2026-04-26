@@ -1,12 +1,24 @@
 from search_module.src.data_manager import DataManager
 from search_module.src.loader import JsonLoader
+from search_module.src.saver import JsonSaver
 from search_module.src.settings import PATH_TO_TEST_JSON
 from search_module.src.theme_finder import ThemeFinder
+from table_api.storage import Storage
 
 
 def main() -> None:
     loader = JsonLoader()
     data_manager = DataManager(loader)
+
+    storage = Storage()
+    str_json = storage.get_unique_topics()
+
+    saver = JsonSaver()
+
+    saver.save(PATH_TO_TEST_JSON, str_json)
+
+    # with open(PATH_TO_TEST_JSON, "w", encoding="utf-8") as f:
+    #     f.write(str_json)
 
     data_manager.load(PATH_TO_TEST_JSON)
 
