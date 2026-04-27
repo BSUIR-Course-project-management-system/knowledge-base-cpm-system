@@ -1,16 +1,21 @@
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from search_module.src.data_manager import DataManager
 from search_module.src.loader import BaseLoader
 from search_module.src.saver import BaseSaver
-from search_module.src.settings import PATH_TO_TEST_JSON
+from search_module.src.settings import MAX_DISTANCE, PATH_TO_TEST_JSON
 from search_module.src.theme_finder import ThemeFinder
 from table_api.storage import Storage
 
 
 class ThemeFinderManager:
-    def __init__(self, loader: BaseLoader, saver: BaseSaver, logger: Optional[logging.Logger] = None):
+    def __init__(
+        self,
+        loader: BaseLoader,
+        saver: BaseSaver,
+        logger: Optional[logging.Logger] = None,
+    ):
         self.loader = loader
         self.saver = saver
         self.logger = logger or logging.getLogger(self.__class__.__name__)
@@ -23,7 +28,7 @@ class ThemeFinderManager:
         self.data_manager = DataManager(self.loader)
 
         self.logger.info("Получение уникальных тем из Storage")
-        
+
         unique_topics_json = self.storage.get_unique_topics()
 
         self.logger.info(f"Сохранение данных в {path_to_data}")
@@ -60,3 +65,30 @@ class ThemeFinderManager:
             self.logger.warning("Поиск не инициализирован")
             raise RuntimeError("Поиск не готов")
         return self.theme_finder.search(query, n_results=n_results)
+
+    def filter_results_by_distance(
+        self, results: Dict[str, Any], max_distance: float = 0.7
+    ) -> Dict[str, Any]:
+        docs = results.get("documents", [[]])[0]
+        dists = results.get("distances", [[]])[0]
+        metas = results.get("metadatas", [[]])[0]
+
+        filtered = {}
+        filtered["documents"] = [[]]
+        filtered["distances"] = [[]]
+        filtered["metadatas"] = [[]]
+
+        for doc, dist, meta in zip(docs, dists, metas):
+            if dist <= max_distance:
+                filtered["documents"][0].append(doc)
+                filtered["distances"][0].append(dist)
+                filtered["metadatas"][0].append(meta)
+        return filtered
+
+    def search_relevant(
+        self, query: str, n_results: int = 4, max_distance: float = MAX_DISTANCE
+    ) -> Dict[str, Any]:
+        if self.theme_finder is None:
+            raise RuntimeError("Поиск не инициализирован")
+        raw_results = self.theme_finder.search(query, n_results=n_results)
+        return self.filter_results_by_distance(raw_results, max_distance)

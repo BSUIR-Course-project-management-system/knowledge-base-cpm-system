@@ -22,11 +22,9 @@ class ThemeFinder:
 
         collection = self.data_manager.collection
 
-        
         all_ids = collection.get()["ids"]
         if all_ids:
             collection.delete(ids=all_ids)
-        
 
         data = self.data_manager.data
         texts = [item["text"] for item in data]

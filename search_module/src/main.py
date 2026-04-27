@@ -1,8 +1,9 @@
 import logging
 import sys
+
 from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
-from search_module.src.settings import LOG_FILE
+from search_module.src.settings import LOG_FILE, MAX_DISTANCE
 from search_module.src.theme_finder_manager import ThemeFinderManager
 
 
@@ -18,14 +19,17 @@ def main():
     loader = JsonLoader()
     saver = JsonSaver()
 
-    manager = ThemeFinderManager(loader, saver, logger=logging.getLogger("ThemeFinderManager"))
+    manager = ThemeFinderManager(
+        loader, saver, logger=logging.getLogger("ThemeFinderManager")
+    )
 
     try:
-
         manager.process_data()
 
-        user_input = input("Вы хотите выбрать тему или просмотреть все подходящие темы (y/n)? ").strip()
-        need_filter = (user_input.lower() == "y")
+        user_input = input(
+            "Вы хотите выбрать тему или просмотреть все подходящие темы (y/n)? "
+        ).strip()
+        need_filter = user_input.lower() == "y"
         manager.filter_by_occupancy(need_filter)
 
         manager.prepare_search()
@@ -38,14 +42,26 @@ def main():
                 continue
 
             try:
-                results = manager.search(query, n_results=4)
-                docs = results["documents"][0]
-                dists = results["distances"][0]
-                metas = results["metadatas"][0]
+                filtered = manager.search_relevant(
+                    query, n_results=4, max_distance=MAX_DISTANCE
+                )
 
-                for i, (doc, dist, meta) in enumerate(zip(docs, dists, metas), start=1):
-                    cat = meta.get("cat", "N/A") if meta else "N/A"
-                    print(f"  {i}. '{doc}' (расстояние: {dist:.3f}) [{cat}]")
+                docs = filtered["documents"][0]
+                dists = filtered["distances"][0]
+                metas = filtered["metadatas"][0]
+
+                if not docs:
+                    print("Ничего не найдено. Попробуйте переформулировать запрос.")
+                    logging.info(
+                        f"Запрос '{query}' не дал релевантных результатов (порог {MAX_DISTANCE})"
+                    )
+                else:
+                    for i, (doc, dist, meta) in enumerate(
+                        zip(docs, dists, metas), start=1
+                    ):
+                        cat = meta.get("cat", "N/A") if meta else "N/A"
+                        print(f"  {i}. '{doc}' (расстояние: {dist:.3f}) [{cat}]")
+
             except Exception as e:
                 logging.error(f"Ошибка при поиске: {e}")
                 print("Произошла ошибка, попробуйте другой запрос.")
