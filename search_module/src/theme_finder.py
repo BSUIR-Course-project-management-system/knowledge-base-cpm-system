@@ -22,12 +22,11 @@ class ThemeFinder:
 
         collection = self.data_manager.collection
 
-        try:
-            all_ids = collection.get()["ids"]
-            if all_ids:
-                collection.delete(ids=all_ids)
-        except Exception as e:
-            print(f"Ошибка при очистке коллекции: {e}")
+        
+        all_ids = collection.get()["ids"]
+        if all_ids:
+            collection.delete(ids=all_ids)
+        
 
         data = self.data_manager.data
         texts = [item["text"] for item in data]
