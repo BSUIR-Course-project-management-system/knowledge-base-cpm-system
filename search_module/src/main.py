@@ -1,11 +1,13 @@
 import logging
-import sys
+from recomendation_module import RecommendationModule
 from search_module.src.data_manager import DataManager
 from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
 from search_module.src.settings import PATH_TO_TEST_JSON, LOG_FILE
 from search_module.src.theme_finder import ThemeFinder
 from table_api.storage import Storage
+
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -51,6 +53,7 @@ def main() -> None:
 
     theme_finder = ThemeFinder(data_manager)
     theme_finder.make_collection()
+    recommendation_module = RecommendationModule(theme_finder.model)
 
     logging.info("Система готова к поиску.")
 
@@ -66,10 +69,27 @@ def main() -> None:
         docs = results["documents"][0]
         dists = results["distances"][0]
         metas = results["metadatas"][0]
+        recommendations = recommendation_module.build_recommendations(
+            query=query,
+            documents=docs,
+            distances=dists,
+            metadatas=metas,
+        )
 
-        for i, (doc, dist, meta) in enumerate(zip(docs, dists, metas)):
+        logging.info("Результаты для запроса '%s':", query)
+        if not recommendations:
+            logging.info("  Подходящие темы не найдены.")
+            continue
+
+        for i, recommendation in enumerate(recommendations):
+            meta = recommendation["metadata"]
             cat = meta.get("cat", "N/A") if meta else "N/A"
-            logging.info(f"  {i + 1}. '{doc}' (дистанция: {dist:.3f}) [{cat}]")
+            dist = recommendation["distance"]
+            dist_label = f"{dist:.3f}" if dist is not None else "N/A"
+            logging.info(
+                f"  {i + 1}. '{recommendation['document']}' (дистанция: {dist_label}) [{cat}]"
+            )
+            logging.info(f"     Объяснение: {recommendation['explanation']}")
 
 
 if __name__ == "__main__":

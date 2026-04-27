@@ -1,0 +1,6 @@
+recomendation_module/
+    ├── .venv/
+    ├── src/
+    │   ├── recommendation_module.py
+    ├── README.md
+    └── structure.txt
