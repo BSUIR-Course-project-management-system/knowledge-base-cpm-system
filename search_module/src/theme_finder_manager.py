@@ -10,12 +10,15 @@ from table_api.storage import Storage
 
 
 class ThemeFinderManager:
+    """Класс для управления поиском тем"""
+
     def __init__(
         self,
         loader: BaseLoader,
         saver: BaseSaver,
         logger: Optional[logging.Logger] = None,
-    ):
+    ) -> None:
+        """Функция инициализации"""
         self.loader = loader
         self.saver = saver
         self.logger = logger or logging.getLogger(self.__class__.__name__)
@@ -24,6 +27,7 @@ class ThemeFinderManager:
         self.storage = Storage()
 
     def process_data(self, path_to_data: str = PATH_TO_TEST_JSON) -> None:
+        """Функция обработки данных"""
         self.logger.info("Создание DataManager")
         self.data_manager = DataManager(self.loader)
 
@@ -39,6 +43,7 @@ class ThemeFinderManager:
         self.logger.info("Данные загружены")
 
     def filter_by_occupancy(self, need_filter: bool) -> None:
+        """Функция фильтрации по статусу темы(свободна/занята)"""
         if self.data_manager is None:
             self.logger.error("DataManager не инициализирован")
             raise RuntimeError("DataManager не инициализирован")
@@ -49,6 +54,7 @@ class ThemeFinderManager:
             self.logger.info("Фильтрация не требуется")
 
     def prepare_search(self) -> None:
+        """Функция инициализации поиска"""
         if self.data_manager is None:
             self.logger.error("Невозможно подготовить поиск")
             raise RuntimeError("DataManager не инициализирован")
@@ -61,6 +67,7 @@ class ThemeFinderManager:
             raise RuntimeError(f"Не удалось инициализировать поиск: {e}")
 
     def search(self, query: str, n_results: int = 4) -> Dict[str, Any]:
+        """Функция поиска темы"""
         if self.theme_finder is None:
             self.logger.warning("Поиск не инициализирован")
             raise RuntimeError("Поиск не готов")
@@ -69,6 +76,7 @@ class ThemeFinderManager:
     def filter_results_by_distance(
         self, results: Dict[str, Any], max_distance: float = 0.7
     ) -> Dict[str, Any]:
+        """Функция фильтрации по расстоянию"""
         docs = results.get("documents", [[]])[0]
         dists = results.get("distances", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
@@ -88,6 +96,7 @@ class ThemeFinderManager:
     def search_relevant(
         self, query: str, n_results: int = 4, max_distance: float = MAX_DISTANCE
     ) -> Dict[str, Any]:
+        """Функция поиска релевантных тем"""
         if self.theme_finder is None:
             raise RuntimeError("Поиск не инициализирован")
         raw_results = self.theme_finder.search(query, n_results=n_results)
