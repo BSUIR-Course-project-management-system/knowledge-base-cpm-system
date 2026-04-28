@@ -1,11 +1,13 @@
 import logging
 import sys
-from search_module.src.data_manager import DataManager
+
 from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
-from search_module.src.settings import PATH_TO_TEST_JSON, LOG_FILE
-from search_module.src.theme_finder import ThemeFinder
-from table_api.storage import Storage
+from search_module.src.settings import LOG_FILE, MAX_DISTANCE
+from search_module.src.theme_finder_manager import ThemeFinderManager
+
+
+def main():
 
     logging.basicConfig(
         level=logging.INFO,
@@ -16,25 +18,21 @@ from table_api.storage import Storage
 
     loader = JsonLoader()
     saver = JsonSaver()
-    logging.info("Загрузчик данных создан")
 
-    saver.save(PATH_TO_TEST_JSON, str_json)
-    logging.info("Данные сохранены")
-
-    data_manager.load(PATH_TO_TEST_JSON)
-    logging.info("Данные загружены в менеджер")
-    
-    is_free_theme = input(
-        "Вы  хотите выбрать тему или просмотреть все подходящие темы(y/n)? "
+    manager = ThemeFinderManager(
+        loader, saver, logger=logging.getLogger("ThemeFinderManager")
     )
-    if is_free_theme.lower() == "y":
-        data_manager.filter_by_occupancy()
-        logging.info("Темы отобраны")
 
-    theme_finder = ThemeFinder(data_manager)
-    theme_finder.make_collection()
+    try:
+        manager.process_data()
 
-    logging.info("Система готова к поиску.")
+        user_input = input(
+            "Вы хотите выбрать тему или просмотреть все подходящие темы (y/n)? "
+        ).strip()
+        need_filter = user_input.lower() == "y"
+        manager.filter_by_occupancy(need_filter)
+
+        manager.prepare_search()
 
         while True:
             query = input("\nВведите запрос (или 'exit'): ").strip()
@@ -48,13 +46,30 @@ from table_api.storage import Storage
                     query, n_results=4, max_distance=MAX_DISTANCE
                 )
 
-        docs = results["documents"][0]
-        dists = results["distances"][0]
-        metas = results["metadatas"][0]
+                docs = filtered["documents"][0]
+                dists = filtered["distances"][0]
+                metas = filtered["metadatas"][0]
 
-        for i, (doc, dist, meta) in enumerate(zip(docs, dists, metas)):
-            cat = meta.get("cat", "N/A") if meta else "N/A"
-            logging.info(f"  {i + 1}. '{doc}' (дистанция: {dist:.3f}) [{cat}]")
+                if not docs:
+                    print("Ничего не найдено. Попробуйте переформулировать запрос.")
+                    logging.info(
+                        f"Запрос '{query}' не дал релевантных результатов (порог {MAX_DISTANCE})"
+                    )
+                else:
+                    for i, (doc, dist, meta) in enumerate(
+                        zip(docs, dists, metas), start=1
+                    ):
+                        cat = meta.get("cat", "N/A") if meta else "N/A"
+                        print(f"  {i}. '{doc}' (расстояние: {dist:.3f}) [{cat}]")
+
+            except Exception as e:
+                logging.error(f"Ошибка при поиске: {e}")
+                print("Произошла ошибка, попробуйте другой запрос.")
+
+    except Exception as e:
+        logging.error(f"Критическая ошибка при инициализации: {e}")
+        print(f"Не удалось запустить поиск: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
