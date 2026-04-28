@@ -7,6 +7,9 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+from search_module.src.settings import MAX_DISTANCE
+from search_module.src.theme_finder_manager import ThemeFinderManager
+
 
 class RecommendationModule:
     """Модуль объяснения выбора темы для пользовательского запроса."""
@@ -96,8 +99,63 @@ class RecommendationModule:
         "ю",
     )
 
-    def __init__(self, model: SentenceTransformer) -> None:
-        self.model = model
+    def __init__(
+        self,
+        search_manager: ThemeFinderManager | None = None,
+        model: SentenceTransformer | None = None,
+    ) -> None:
+        if search_manager is None and model is None:
+            raise ValueError(
+                "Нужно передать либо ThemeFinderManager, либо SentenceTransformer"
+            )
+
+        self.search_manager = search_manager
+        self._model = model
+
+    @property
+    def model(self) -> SentenceTransformer:
+        if self._model is not None:
+            return self._model
+
+        if (
+            self.search_manager is None
+            or self.search_manager.theme_finder is None
+        ):
+            raise RuntimeError("Поиск не подготовлен, модель недоступна")
+
+        return self.search_manager.theme_finder.model
+
+    def search_with_explanations(
+        self,
+        query: str,
+        n_results: int = 4,
+        max_distance: float = MAX_DISTANCE,
+    ) -> list[dict[str, Any]]:
+        """Запускает поиск через search_module и возвращает результаты с объяснениями."""
+        if self.search_manager is None:
+            raise RuntimeError("ThemeFinderManager не передан в RecommendationModule")
+
+        search_results = self.search_manager.search_relevant(
+            query,
+            n_results=n_results,
+            max_distance=max_distance,
+        )
+        return self.explain_search_results(query, search_results)
+
+    def explain_search_results(
+        self, query: str, search_results: Mapping[str, Any]
+    ) -> list[dict[str, Any]]:
+        """Обогащает результаты search_module естественно-языковыми объяснениями."""
+        documents = self._extract_result_items(search_results, "documents")
+        distances = self._extract_result_items(search_results, "distances")
+        metadatas = self._extract_result_items(search_results, "metadatas")
+
+        return self.build_recommendations(
+            query=query,
+            documents=documents,
+            distances=distances,
+            metadatas=metadatas,
+        )
 
     def build_recommendations(
         self,
@@ -167,7 +225,7 @@ class RecommendationModule:
         similarity_label = self._similarity_label(similarity)
 
         score_part = (
-            f"Модель увидела {similarity_label} семантическую близость "
+            f"Тема выбрана, потому что модель поиска увидела {similarity_label} семантическую близость "
             f"(cosine similarity: {similarity:.3f}"
         )
         if distance is not None:
@@ -177,11 +235,13 @@ class RecommendationModule:
         parts = [score_part]
         if matched_keywords:
             parts.append(
-                "Ключевые опоры темы: " + ", ".join(matched_keywords[:4]) + "."
+                "В запросе и теме совпадают смысловые опоры: "
+                + ", ".join(matched_keywords[:4])
+                + "."
             )
         else:
             parts.append(
-                "Прямых совпадений по словам почти нет, но тема совпадает с запросом по смысловому вектору."
+                "Прямых совпадений по словам почти нет, но тема близка запросу по векторному представлению."
             )
 
         if document_focus:
@@ -190,6 +250,19 @@ class RecommendationModule:
             )
 
         return " ".join(parts)
+
+    def _extract_result_items(
+        self, search_results: Mapping[str, Any], key: str
+    ) -> list[Any]:
+        value = search_results.get(key, [])
+        if not value:
+            return []
+
+        first_group = value[0]
+        if isinstance(first_group, list):
+            return first_group
+
+        return list(first_group)
 
     def _extract_keywords(self, text: str) -> list[str]:
         tokens = self._TOKEN_RE.findall(text.lower())
