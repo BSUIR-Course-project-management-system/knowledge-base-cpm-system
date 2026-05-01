@@ -42,17 +42,6 @@ class ThemeFinderManager:
         self.data_manager.load(path_to_data)
         self.logger.info("Данные загружены")
 
-    def filter_by_occupancy(self, need_filter: bool) -> None:
-        """Функция фильтрации по статусу темы(свободна/занята)"""
-        if self.data_manager is None:
-            self.logger.error("DataManager не инициализирован")
-            raise RuntimeError("DataManager не инициализирован")
-        if need_filter:
-            self.data_manager.filter_by_occupancy()
-            self.logger.info("Темы отфильтрованы по занятости")
-        else:
-            self.logger.info("Фильтрация не требуется")
-
     def prepare_search(self) -> None:
         """Функция инициализации поиска"""
         if self.data_manager is None:
@@ -100,6 +89,7 @@ class ThemeFinderManager:
         query: str,
         n_results: int = 4,
         max_distance: float = MAX_DISTANCE,
+        is_used: bool = False,
         curator: Optional[str] = None,
         examiner: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -107,6 +97,10 @@ class ThemeFinderManager:
         if self.theme_finder is None:
             raise RuntimeError("Поиск не инициализирован")
         raw_results = self.theme_finder.search(
-            query, n_results=n_results, curator=curator, examiner=examiner
+            query,
+            n_results=n_results,
+            is_used=is_used,
+            curator=curator,
+            examiner=examiner,
         )
         return self.filter_results_by_distance(raw_results, max_distance)
