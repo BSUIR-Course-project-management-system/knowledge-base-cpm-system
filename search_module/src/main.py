@@ -1,31 +1,20 @@
-import logging
 import sys
 
 from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
-from search_module.src.settings import LOG_FILE, MAX_DISTANCE
+from search_module.src.settings import MAX_DISTANCE
 from search_module.src.theme_finder_manager import ThemeFinderManager
 
 
 def main():
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)-8s | %(message)s",
-        handlers=[logging.FileHandler(LOG_FILE, encoding="utf-8")],
-        force=True,
-    )
-
     loader = JsonLoader()
     saver = JsonSaver()
 
-    manager = ThemeFinderManager(
-        loader, saver, logger=logging.getLogger("ThemeFinderManager")
-    )
+    manager = ThemeFinderManager(loader, saver)
 
     try:
         manager.process_data()
-        # manager.filter_by_occupancy(need_filter)
 
         manager.prepare_search()
 
@@ -48,7 +37,7 @@ def main():
                 user_curator_input = user_curator_input if user_curator_input else None
 
                 user_examiner_input = input(
-                    "Введите имя проверяющего, либо нажмите Enter"
+                    "Введите имя проверяющего, либо нажмите Enter: "
                 )
                 user_examiner_input = (
                     user_examiner_input if user_examiner_input else None
@@ -69,9 +58,6 @@ def main():
 
                 if not docs:
                     print("Ничего не найдено. Попробуйте переформулировать запрос.")
-                    logging.info(
-                        f"Запрос '{query}' не дал релевантных результатов (порог {MAX_DISTANCE})"
-                    )
                 else:
                     for i, (doc, dist, meta) in enumerate(
                         zip(docs, dists, metas), start=1
@@ -79,13 +65,11 @@ def main():
                         cat = meta.get("cat", "N/A") if meta else "N/A"
                         print(f"  {i}. '{doc}' (расстояние: {dist:.3f}) [{cat}]")
 
-            except Exception as e:
-                logging.error(f"Ошибка при поиске: {e}")
+            except Exception:
                 print("Произошла ошибка, попробуйте другой запрос.")
 
-    except Exception as e:
-        logging.error(f"Критическая ошибка при инициализации: {e}")
-        print(f"Не удалось запустить поиск: {e}")
+    except (Exception, KeyboardInterrupt):
+        print("Не удалось запустить поиск:")
         sys.exit(1)
 
 

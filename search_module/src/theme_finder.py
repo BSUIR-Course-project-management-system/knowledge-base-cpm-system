@@ -17,8 +17,9 @@ class ThemeFinder:
     def make_collection(self) -> None:
         """Функция формирования векторов поиска"""
         if not self.data_manager.data:
-            print("Данные не загружены. Сначала вызовите data_manager.load()")
-            return
+            raise RuntimeError(
+                "Данные не загружены. Сначала вызовите data_manager.load()"
+            )
 
         collection = self.data_manager.collection
 
@@ -39,7 +40,6 @@ class ThemeFinder:
         collection.add(
             embeddings=embeddings, documents=texts, ids=ids, metadatas=metadatas
         )
-        print("База данных успешно заполнена!")
 
     def search(
         self,

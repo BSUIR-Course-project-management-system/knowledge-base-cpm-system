@@ -20,6 +20,4 @@ class DataManager:
 
     def filter_by_occupancy(self) -> None:
         """Функция фильтрации по статусу занятости"""
-        print(f"до фильтрации {len(self.data)}")
         self.data = [item for item in self.data if not item.get("is_used")]
-        print(f"после фильтрации {len(self.data)}")
