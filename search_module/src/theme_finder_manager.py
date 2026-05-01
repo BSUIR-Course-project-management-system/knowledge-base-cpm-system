@@ -71,12 +71,14 @@ class ThemeFinderManager:
         if self.theme_finder is None:
             self.logger.warning("Поиск не инициализирован")
             raise RuntimeError("Поиск не готов")
+
         return self.theme_finder.search(query, n_results=n_results)
 
     def filter_results_by_distance(
         self, results: Dict[str, Any], max_distance: float = 0.7
     ) -> Dict[str, Any]:
         """Функция фильтрации по расстоянию"""
+
         docs = results.get("documents", [[]])[0]
         dists = results.get("distances", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
@@ -94,10 +96,17 @@ class ThemeFinderManager:
         return filtered
 
     def search_relevant(
-        self, query: str, n_results: int = 4, max_distance: float = MAX_DISTANCE
+        self,
+        query: str,
+        n_results: int = 4,
+        max_distance: float = MAX_DISTANCE,
+        curator: Optional[str] = None,
+        examiner: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Функция поиска релевантных тем"""
         if self.theme_finder is None:
             raise RuntimeError("Поиск не инициализирован")
-        raw_results = self.theme_finder.search(query, n_results=n_results)
+        raw_results = self.theme_finder.search(
+            query, n_results=n_results, curator=curator, examiner=examiner
+        )
         return self.filter_results_by_distance(raw_results, max_distance)

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from sentence_transformers import SentenceTransformer
 
@@ -41,12 +41,36 @@ class ThemeFinder:
         )
         print("База данных успешно заполнена!")
 
-    def search(self, query: str, n_results: int = 4) -> Any:
-        """Функция векторного поиска"""
+    # def search(self, query: str, n_results: int = 4) -> Any:
+    #     """Функция векторного поиска"""
+    #     query_emb = self.model.encode([query], show_progress_bar=False).tolist()
+    #     results = self.data_manager.collection.query(
+    #         query_embeddings=query_emb,
+    #         n_results=n_results,
+    #         include=["documents", "distances", "metadatas"],
+    #     )
+    #     return results
+    
+
+    def search(self, query: str, n_results: int = 4, curator: Optional[str]=None, examiner: Optional[str]=None,) -> Any:
         query_emb = self.model.encode([query], show_progress_bar=False).tolist()
+        conditions = []
+        if curator:
+            conditions.append({"curator": curator})
+        if examiner:
+            conditions.append({"examiner": examiner})
+        
+        where_filter = None
+        if len(conditions) == 1:
+            where_filter = conditions[0]
+        elif len(conditions) == 2:
+            where_filter = {"$and": conditions}
+        
         results = self.data_manager.collection.query(
             query_embeddings=query_emb,
             n_results=n_results,
             include=["documents", "distances", "metadatas"],
+            where=where_filter
         )
         return results
+    

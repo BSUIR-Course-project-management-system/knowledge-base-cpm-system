@@ -25,11 +25,18 @@ def main():
 
     try:
         manager.process_data()
+        need_filter = None
+        try:
+            user_input = int(
+                input(
+                    "Вы хотите просмотреть все подходящие темы или только свободные (1/2)? "
+                )
+            )
+            need_filter = user_input == 2
 
-        user_input = input(
-            "Вы хотите выбрать тему или просмотреть все подходящие темы (y/n)? "
-        ).strip()
-        need_filter = user_input.lower() == "y"
+        except ValueError:
+            print("Некорректный ввод попробуйте еще раз!")
+
         manager.filter_by_occupancy(need_filter)
 
         manager.prepare_search()
@@ -42,8 +49,14 @@ def main():
                 continue
 
             try:
+                user_curator_input = input("Введите имя куратора, либо нажмите Enter: ").strip()
+                user_curator_input = user_curator_input if user_curator_input else None
+                
+                user_examiner_input = input("Введите имя проверяющего, либо нажмите Enter")
+                user_examiner_input = user_examiner_input if user_examiner_input else None
+
                 filtered = manager.search_relevant(
-                    query, n_results=4, max_distance=MAX_DISTANCE
+                    query, n_results=4, max_distance=MAX_DISTANCE, curator = user_curator_input, examiner=user_examiner_input
                 )
 
                 docs = filtered["documents"][0]
