@@ -10,6 +10,9 @@ import json
 
 
 def main():
+    """
+    Главная функция модуля, обрабатывающая ввод пользователя
+    """
     clear_logs(LOG_FILE)
     config_parser = YamlParser()
     storage = Storage()

@@ -6,12 +6,25 @@ from .logger import logger
 
 
 class SheduleGenerator:
+    """
+    Класс, который генерирует расписание
+    """
+
     def __init__(self, config_parser: BaseParser, date_checker: DateChecker) -> None:
+        """Конструктор класса
+
+        Args:
+            config_parser (BaseParser): Парсер конфиг-файла
+            date_checker (DateChecker): Объект DatrChecekr для проверки дат
+        """
         self.config_parser = config_parser
         self.date_checker = date_checker
         self._init_variables()
 
-    def _init_variables(self):
+    def _init_variables(self) -> None:
+        """
+        Метод для инициализации переменных объекта значениями из конфиг-файла
+        """
         data = self.config_parser.parse_config("config/settings.yaml")
         self.WORK_START_HOUR = data["work_start"]
         self.WORK_END_HOUR = data["work_end"]
@@ -24,6 +37,17 @@ class SheduleGenerator:
         duration_minutes: int,
         occupied_intervals: List[Tuple[datetime, datetime]],
     ) -> List[datetime]:
+        """Метод для получения потенциальных дат со временем для опроцентовок
+
+        Args:
+            start_dt (datetime): Дата принятия проекта
+            end_dt (datetime): Дата защиты проекта
+            duration_minutes (int): Продолжительность опроцентовки
+            occupied_intervals (List[Tuple[datetime, datetime]]): Занятые дни со временем
+
+        Returns:
+            List[datetime]: Потенциальные datetime объекты для опроцентовок
+        """
         logger.info("Начало получения потенциальных дат с временем для опроцентовок")
         candidates = []
         current_day = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -50,9 +74,7 @@ class SheduleGenerator:
                     candidates.append(slot_start)
                 slot_start += timedelta(minutes=self.STEP_MINUTES)
             current_day += timedelta(days=1)
-        logger.info(
-            "Потенциальные даты для опроцентовок с временем успешно получены."
-        )
+        logger.info("Потенциальные даты для опроцентовок с временем успешно получены.")
         return candidates
 
     def select_slots(
@@ -62,6 +84,17 @@ class SheduleGenerator:
         end_dt: datetime,
         num_points: int = 3,
     ) -> Optional[List[datetime]]:
+        """Метод для получения 3 дат и времени для проведения опроцентовок по проекту
+
+        Args:
+            candidates (List[datetime]): Потенциальные даты для проведения опроцентовок
+            start_dt (datetime): Дата принятия проекта
+            end_dt (datetime): Дата
+            num_points (int, optional): Количество опроцентовок в семестре. По умолчанию 3.
+
+        Returns:
+            Optional[List[datetime]]: Список с датами опроцентовок и временем их проведения
+        """
         if len(candidates) < num_points:
             return None
 
