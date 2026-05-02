@@ -4,12 +4,15 @@ from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
 from search_module.src.settings import MAX_DISTANCE
 from search_module.src.theme_finder_manager import ThemeFinderManager
+from search_module.src.utils import ConsoleThemePrinter, SortMenuPrinter
 
 
 def main():
 
     loader = JsonLoader()
     saver = JsonSaver()
+    theme_printer = ConsoleThemePrinter()
+    menu_sort_printer = SortMenuPrinter()
 
     manager = ThemeFinderManager(loader, saver)
 
@@ -52,18 +55,22 @@ def main():
                     examiner=user_examiner_input,
                 )
 
-                docs = filtered["documents"][0]
-                dists = filtered["distances"][0]
-                metas = filtered["metadatas"][0]
+                theme_printer.print_themes(filtered)
 
-                if not docs:
-                    print("Ничего не найдено. Попробуйте переформулировать запрос.")
-                else:
-                    for i, (doc, dist, meta) in enumerate(
-                        zip(docs, dists, metas), start=1
-                    ):
-                        cat = meta.get("cat", "N/A") if meta else "N/A"
-                        print(f"  {i}. '{doc}' (расстояние: {dist:.3f}) [{cat}]")
+                while True:
+                    menu_sort_printer.print_menu()
+                    user_sort_input = input("Введите способ сортировки: ")
+                    match user_sort_input:
+                        case "1":
+                            filtered = manager.sort_results(filtered, mark_priority=1)
+                        case "2":
+                            filtered = manager.sort_results(filtered, date_priority=1)
+                        case "3":
+                            filtered = manager.sort_results(
+                                filtered, mark_priority=1, dist_priority=2
+                            )
+                        case _:
+                            break
 
             except Exception:
                 print("Произошла ошибка, попробуйте другой запрос.")

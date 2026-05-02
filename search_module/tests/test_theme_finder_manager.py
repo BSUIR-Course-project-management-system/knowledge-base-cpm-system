@@ -103,3 +103,39 @@ class TestThemeFinderManager:
     def test_search_relevant_not_init(self, manager):
         with pytest.raises(RuntimeError, match="Поиск не инициализирован"):
             manager.search_relevant("query")
+
+    def test_sort_results_by_mark(self, manager):
+        raw_data = {
+            "documents": [["Weak Theme", "Strong Theme"]],
+            "distances": [[0.1, 0.1]],
+            "metadatas": [[{"mark": 3}, {"mark": 5}]],
+        }
+
+        sorted_res = manager.sort_results(raw_data, mark_priority=1)
+
+        assert sorted_res["metadatas"][0][0]["mark"] == 5
+        assert sorted_res["documents"][0][0] == "Strong Theme"
+
+    def test_sort_results_by_distance(self, manager):
+        raw_data = {
+            "documents": [["Far", "Near"]],
+            "distances": [[0.6, 0.2]],
+            "metadatas": [[{"mark": 5}, {"mark": 5}]],
+        }
+
+        sorted_res = manager.sort_results(raw_data, dist_priority=1)
+
+        assert sorted_res["distances"][0][0] == 0.2
+        assert sorted_res["documents"][0][0] == "Near"
+
+    def test_sort_results_combined(self, manager):
+        raw_data = {
+            "documents": [["Best-Far", "Mid-Near", "Best-Near"]],
+            "distances": [[0.8, 0.1, 0.2]],
+            "metadatas": [[{"mark": 5}, {"mark": 4}, {"mark": 5}]],
+        }
+
+        sorted_res = manager.sort_results(raw_data, mark_priority=1, dist_priority=2)
+
+        results = sorted_res["documents"][0]
+        assert results == ["Best-Near", "Best-Far", "Mid-Near"]

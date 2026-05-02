@@ -69,6 +69,61 @@ class ThemeFinderManager:
                 filtered["distances"][0].append(dist)
                 filtered["metadatas"][0].append(meta)
         return filtered
+    
+    def sort_results(
+        self,
+        results: Dict[str, Any],
+        mark_priority: Optional[int] = None,
+        date_priority: Optional[int] = None,
+        dist_priority: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Метод для сортировки результатов по нескольким критериям.
+        Принимает словарь с ключами documents, distances, metadatas.
+        """
+        docs = results.get("documents", [[]])[0]
+        dists = results.get("distances", [[]])[0]
+        metas = results.get("metadatas", [[]])[0]
+
+        if not docs:
+            return results
+
+        data_to_sort = []
+        for i in range(len(docs)):
+            data_to_sort.append({
+                "doc": docs[i],
+                "dist": dists[i],
+                "meta": metas[i],
+                "mark": metas[i].get("mark", 0),
+                "date": metas[i].get("date", "")
+            })
+
+        p_map = {}
+        if mark_priority is not None: p_map["mark"] = mark_priority
+        if date_priority is not None: p_map["date"] = date_priority
+        if dist_priority is not None: p_map["dist"] = dist_priority
+
+        active_criteria = sorted(p_map.keys(), key=lambda x: p_map[x])
+
+        def get_sorting_tuple(item):
+            values = []
+            for criterion in active_criteria:
+                if criterion == "mark":
+                    values.append(-item["mark"])
+                elif criterion == "dist":
+                    values.append(item["dist"])
+                elif criterion == "date":
+                    values.append(item["date"])
+            return tuple(values)
+        
+        if active_criteria:
+            data_to_sort.sort(key=get_sorting_tuple)
+
+        return {
+            "documents": [[item["doc"] for item in data_to_sort]],
+            "distances": [[item["dist"] for item in data_to_sort]],
+            "metadatas": [[item["meta"] for item in data_to_sort]]
+        }
 
     def search_relevant(
         self,
