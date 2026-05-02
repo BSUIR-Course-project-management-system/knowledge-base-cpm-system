@@ -1,9 +1,11 @@
 import gspread
 import logging
 import sys
+import os
 import pandas as pd
 import numpy as np
 import json
+from dotenv import load_dotenv
 
 LOG_FILE = "table_api/logs/google_sheets_api.log"
 logging.basicConfig(
@@ -14,9 +16,12 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout),
     ],
 )
+load_dotenv()
+CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE")
+SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
-CREDENTIALS_FILE = "table_api/secrets/credentials.json"
-SPREADSHEET_ID = "1IrG7wfQe6c82nzUvzS7VCESk5QGE7DEJWzepPJn8Nn8"
+if not SPREADSHEET_ID:
+    raise ValueError("ОШИБКА: Не найден ID в .env!")
 
 COLUMNS_FOR_GROUP_FETCHING = [
     "ФИО",
