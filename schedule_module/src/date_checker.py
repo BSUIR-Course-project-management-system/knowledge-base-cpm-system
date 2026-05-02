@@ -22,3 +22,19 @@ class DateChecker:
         is_weekend = date.weekday() >= 5
 
         return not (is_holiday or is_weekend)
+    
+    @staticmethod
+    def is_correct_format(date: str) -> bool:
+        """Проверяет корректный ли формат у даты (YYYY-MM-DD)
+
+        Args:
+            datetime (str): Строка, которую надо проверить
+
+        Returns:
+            bool: true, если строка формата YYYY-MM-DD, иначе false
+        """
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+            return True
+        except ValueError:
+            return False

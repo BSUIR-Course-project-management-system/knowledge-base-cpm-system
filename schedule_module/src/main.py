@@ -24,7 +24,15 @@ def main():
     project_name = input("Название проекта: ").strip()
     reviewer_name = input("Имя проверяющего: ").strip()
     start_date_str = input("Дата принятия темы (YYYY-MM-DD): ").strip()
+    if not DateChecker.is_correct_format(start_date_str):
+        print("Неверный формат даты")
+        logger.warning("Неверный формат даты")
+        return
     end_date_str = input("Конечная дата (защита) (YYYY-MM-DD): ").strip()
+    if not DateChecker.is_correct_format(start_date_str):
+        print("Неверный формат даты")
+        logger.warning("Неверный формат даты")
+        return
     duration_str = input(
         "Длительность опроцентовки (минуты, по умолчанию 30): "
     ).strip()
