@@ -4,10 +4,13 @@ from .config_parser import YamlParser
 from .schedule_generator import SheduleGenerator
 from table_api.storage import Storage
 from .date_checker import DateChecker
+from .logger import logger, LOG_FILE
+from .utills import clear_logs
 import json
 
 
 def main():
+    clear_logs(LOG_FILE)
     config_parser = YamlParser()
     storage = Storage()
     dc = DateChecker()
@@ -33,6 +36,7 @@ def main():
 
     if end_dt <= start_dt:
         print("Ошибка: конечная дата должна быть позже начальной.")
+        logger.warning("Ошибка: конечная дата должна быть позже начальной.")
         return
 
     data = json.loads(storage.get_examiner_schedule(reviewer_name))
@@ -51,6 +55,7 @@ def main():
 
     if best is None:
         print("Не удалось найти три свободных интервала для опроцентовок.")
+        logger.warning("Не удалось найти три свободных интервала для опроцентовок.")
         return
 
     print("\n=== Результат ===")

@@ -2,6 +2,7 @@ from .config_parser import BaseParser
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 from .date_checker import DateChecker
+from .logger import logger
 
 
 class SheduleGenerator:
@@ -23,6 +24,7 @@ class SheduleGenerator:
         duration_minutes: int,
         occupied_intervals: List[Tuple[datetime, datetime]],
     ) -> List[datetime]:
+        logger.info("Начало получения потенциальных дат с временем для опроцентовок")
         candidates = []
         current_day = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         while current_day <= end_dt:
@@ -44,9 +46,13 @@ class SheduleGenerator:
                         break
                 slot_date = slot_start.date()
                 if not conflict and self.date_checker.is_work_day(slot_date):
+                    logger.info(f"Дата {slot_start} подходит")
                     candidates.append(slot_start)
                 slot_start += timedelta(minutes=self.STEP_MINUTES)
             current_day += timedelta(days=1)
+        logger.info(
+            "Потенциальные даты для опроцентовок с временем успешно получены."
+        )
         return candidates
 
     def select_slots(
@@ -59,10 +65,12 @@ class SheduleGenerator:
         if len(candidates) < num_points:
             return None
 
+        logger.info("Начало получения времени для опроцентовок")
         total_secs = (end_dt - start_dt).total_seconds()
         ideal_offsets = [
             total_secs * (i + 1) / (num_points + 1) for i in range(num_points)
         ]
+        logger.info("Получение идеального времени для опроцентовок")
 
         selected = []
         used_indices = set()
@@ -83,8 +91,9 @@ class SheduleGenerator:
             if best_idx == -1:
                 step = len(candidates) / (num_points + 1)
                 indices = [int(step * (i + 1)) for i in range(num_points)]
+                logger.info("Время опроцентовок успешно получено")
                 return [candidates[i] for i in indices]
             selected.append(candidates[best_idx])
             used_indices.add(best_idx)
-
+        logger.info("Время опроцентовок успешно получено")
         return sorted(selected)
