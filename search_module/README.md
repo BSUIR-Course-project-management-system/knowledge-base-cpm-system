@@ -17,10 +17,15 @@
 search_module/
     ├── .venv/
     ├── chroma_db/
+    ├── data/
+    ├── logs/
+    │   ├── search_module_main.log
+    │   ├── theme_finder_manager.log
+    │   └── theme_finder.log
     ├── models/
     ├── scripts/
     │   ├── setup.bat
-    │   ├── setup.sh
+    │   └── setup.sh
     ├── src/
     │   ├── __init__.py
     │   ├── data_manager.py
