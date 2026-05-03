@@ -28,3 +28,7 @@ data/
 
 # Ignore db
 **chroma_db/
+
+# Coverage
+**.coverage
+**group.json

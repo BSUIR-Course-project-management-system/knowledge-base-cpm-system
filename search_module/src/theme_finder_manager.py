@@ -10,7 +10,7 @@ from search_module.src.settings import (
     THEME_FINDER_MANAGER_LOG_FILE,
 )
 from search_module.src.theme_finder import ThemeFinder
-from table_api.storage import Storage
+from table_api.src.storage import Storage
 
 
 class ThemeFinderManager:
@@ -101,20 +101,28 @@ class ThemeFinderManager:
         dists = results.get("distances", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
 
-        self.logger.info("Начало сортировки тем по критериям")
-
         if not docs:
             return results
 
+        self.logger.info("Начало сортировки тем по критериям")
+
         data_to_sort = []
         for i in range(len(docs)):
+            meta = metas[i]
+
+            raw_mark = meta.get("rounded_final_grade") or meta.get("mark") or 0
+            try:
+                mark = float(raw_mark)
+            except (ValueError, TypeError):
+                mark = 0.0
+
             data_to_sort.append(
                 {
                     "doc": docs[i],
                     "dist": dists[i],
-                    "meta": metas[i],
-                    "mark": metas[i].get("mark", 0),
-                    "date": metas[i].get("date", ""),
+                    "meta": meta,
+                    "mark": mark,
+                    "date": str(meta.get("year") or meta.get("date") or ""),
                 }
             )
 
@@ -141,8 +149,7 @@ class ThemeFinderManager:
 
         if active_criteria:
             data_to_sort.sort(key=get_sorting_tuple)
-
-        self.logger.info("Темы отсортированы")
+            self.logger.info(f"Темы отсортированы по: {active_criteria}")
 
         return {
             "documents": [[item["doc"] for item in data_to_sort]],
