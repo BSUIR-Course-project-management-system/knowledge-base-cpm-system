@@ -8,11 +8,42 @@
 ## Технологии:
 
 * Python
+* Pytest
 * chromadb
 * sentence-transformers
 
 ## Структура:
+```
+search_module/
+    ├── .venv/
+    ├── chroma_db/
+    ├── models/
+    ├── src/
+    │   ├── __init__.py
+    │   ├── data_manager.py
+    │   ├── loader.py
+    │   ├── main.py
+    │   ├── saver.py
+    │   ├── settings.py
+    │   ├── theme_finder_manager.py
+    │   ├── theme_finder.py
+    │   └── utils.py
+    ├── tests/
+    │   ├── json_tests/
+    │   │   ├── test1.json
+    │   │   └── test2.json
+    │   ├── __init__.py
+    │   ├── test_data_manager.py
+    │   ├── test_loader.py
+    │   ├── test_saver.py
+    │   └── test_theme_finder_manager.py
+    ├── __init__.py
+    ├── data.json
+    ├── README.md
+    └── requirements.txt
+```
 
-С полной структурой проекта можно ознакомится в файле **structure.txt**.
+## Тестирование 
 
+Для тестирования модуля использовалась библиотека **Pytest**, покрытие составило **94%**.
 
