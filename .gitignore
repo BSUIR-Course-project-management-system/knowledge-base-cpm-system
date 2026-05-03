@@ -31,4 +31,7 @@ data/
 
 # Coverage
 **.coverage
+
+#Data
 **group.json
+**data/
