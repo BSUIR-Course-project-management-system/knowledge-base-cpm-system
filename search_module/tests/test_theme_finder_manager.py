@@ -12,7 +12,9 @@ with patch.dict(
 @pytest.fixture
 def mock_dm():
     dm = MagicMock()
-    dm.data = [{"id": "1", "topic": "тест", "curator": "admin", "mark": 5}]
+    dm.data = [
+        {"id": "1", "topic": "тест", "curator": "admin", "rounded_final_grade": 5}
+    ]
     dm.collection = MagicMock()
     return dm
 
@@ -53,6 +55,7 @@ class TestThemeFinder:
         finder.search("query", is_used=True, curator="A", examiner="B")
         assert mock_dm.collection.query.called
 
+
 class TestThemeFinderManager:
     @pytest.fixture
     def manager(self):
@@ -87,16 +90,22 @@ class TestThemeFinderManager:
         raw = {
             "documents": [["Doc1"]],
             "distances": [[0.1]],
-            "metadatas": [[{"mark": "bad_mark"}]],
+            "metadatas": [[{"rounded_final_grade": "bad_mark"}]],
         }
         res = manager.sort_results(raw, mark_priority=1)
-        assert res["metadatas"][0][0]["mark"] == "bad_mark"
+        assert res["metadatas"][0][0]["rounded_final_grade"] == "bad_mark"
+
 
     def test_sort_results_all_priorities(self, manager):
         raw = {
             "documents": [["A", "B"]],
             "distances": [[0.5, 0.1]],
-            "metadatas": [[{"mark": 3, "year": 2020}, {"mark": 5, "date": "2024"}]],
+            "metadatas": [
+                [
+                    {"rounded_final_grade": 3, "date_defence": "01.01.2020"},
+                    {"rounded_final_grade": 5, "date_defence": "01.01.2024"},
+                ]
+            ],
         }
         res = manager.sort_results(
             raw, mark_priority=1, date_priority=2, dist_priority=3
@@ -128,7 +137,10 @@ class TestThemeFinderManager:
             "documents": [["D1", "D2"]],
             "distances": [[0.1, 0.1]],
             "metadatas": [
-                [{"rounded_final_grade": 10, "date": "2021"}, {"mark": 4, "year": 2025}]
+                [
+                    {"rounded_final_grade": 10, "date_defence": "27.05.2025"},
+                    {"rounded_final_grade": 4, "date_defence": "01.01.2021"},
+                ]
             ],
         }
         res = manager.sort_results(raw, date_priority=1)

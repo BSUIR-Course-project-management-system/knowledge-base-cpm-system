@@ -12,16 +12,9 @@ def main():
     logger = Logger(MAIN_LOG_FILE, level="INFO")
 
     loader = JsonLoader()
-    logger.info("Создан объект класса JsonLoader из файла")
-
     saver = JsonSaver()
-    logger.info("Создан объект класса JsonSaver данных из файла")
-
     theme_printer = ConsoleThemePrinter()
-    logger.info("Создан объект класса ConsoleThemePrinter данных из файла")
-
     menu_sort_printer = SortMenuPrinter()
-    logger.info("Создан объект класса MenuSortPrinter данных из файла")
 
     manager = ThemeFinderManager(loader, saver)
     logger.info("Инициирован менеджер поиска тем")
@@ -35,7 +28,6 @@ def main():
 
         while True:
             query = input("\nВведите запрос (или 'exit'): ").strip()
-            logger.info("Пользователь совершил ввод интересующих его тем")
             if query.lower() == "exit":
                 break
             if not query:
@@ -46,66 +38,75 @@ def main():
                     "Только свободные темы? (y - да, любая другая клавиша - нет): "
                 )
                 is_used = not (user_input.strip().lower() == "y")
-                logger.info(
-                    f"Пользователь выбрал статус занятости тем, не занятые темы: {is_used}"
-                )
 
-                user_curator_input = input(
+                curator_input = input(
                     "Введите имя куратора, либо нажмите Enter: "
                 ).strip()
-                user_curator_input = user_curator_input if user_curator_input else None
-                logger.info(f"Пользователь ввел имя куратора ({user_curator_input})")
+                curator = curator_input if curator_input else None
 
-                user_examiner_input = input(
+                examiner_input = input(
                     "Введите имя проверяющего, либо нажмите Enter: "
-                )
-                user_examiner_input = (
-                    user_examiner_input if user_examiner_input else None
-                )
-                logger.info(
-                    f"Пользователь ввел имя проверяющего ({user_examiner_input})"
-                )
+                ).strip()
+                examiner = examiner_input if examiner_input else None
 
-                filtered = manager.search_relevant(
+                search_results = manager.search_relevant(
                     query,
-                    n_results=4,
+                    n_results=60,
                     max_distance=MAX_DISTANCE,
                     is_used=is_used,
-                    curator=user_curator_input,
-                    examiner=user_examiner_input,
+                    curator=curator,
+                    examiner=examiner,
                 )
-                logger.info(
-                    "Получен итоговый список тем отсортированный по релевантности тем"
-                )
-                theme_printer.print_themes(filtered)
-                if len(filtered) > 1:
-                    # while True:
-                    #     menu_sort_printer.print_menu()
-                    #     logger.info("Выведен список вариантов сортировки")
-                    #     user_sort_input = input("Введите способ сортировки: ")
-                    #     logger.info(f"Пользователь выбрал вариант сортировки({user_sort_input})")
-                    #     match user_sort_input:
-                    #         case "1":
-                    #             filtered = manager.sort_results(filtered, mark_priority=1)
-                    #             logger.info("Темы отсортированы по оценке за проект")
-                    #         case "2":
-                    #             filtered = manager.sort_results(filtered, date_priority=1)
-                    #             logger.info("Темы отсортированы по дате сдачи")
-                    #         case "3":
-                    #             filtered = manager.sort_results(
-                    #                 filtered, mark_priority=1, dist_priority=2
-                    #             )
-                    #             logger.info("Темы отсортированы по релевантности тем")
-                    #         case _:
-                    #             break
-                    pass
 
-            except Exception:
+                logger.info("Получен итоговый список тем от ChromaDB")
+
+                if (
+                    not search_results.get("documents")
+                    or not search_results["documents"][0]
+                ):
+                    print("Темы не найдены.")
+                    continue
+
+                theme_printer.print_themes(search_results)
+
+                if len(search_results["documents"][0]) > 1:
+                    while True:
+                        menu_sort_printer.print_menu()
+                        user_sort_input = input(
+                            "Введите способ сортировки (Enter для нового поиска): "
+                        ).strip()
+
+                        if not user_sort_input:
+                            break
+
+                        match user_sort_input:
+                            case "1":
+                                filtered = manager.sort_results(
+                                    search_results, mark_priority=1, dist_priority=2
+                                )
+                                logger.info("Темы отсортированы по оценке")
+                            case "2":
+                                filtered = manager.sort_results(
+                                    search_results, date_priority=1, dist_priority=2
+                                )
+                                logger.info("Темы отсортированы по дате")
+                            case "3":
+                                filtered = manager.sort_results(
+                                    search_results, dist_priority=1
+                                )
+                                logger.info("Темы отсортированы по релевантности")
+                            case _:
+                                break
+
+                        theme_printer.print_themes(filtered)
+
+            except Exception as e:
+                logger.error(f"Ошибка в процессе поиска: {e}")
                 print("Произошла ошибка, попробуйте другой запрос.")
 
     except (Exception, KeyboardInterrupt):
-        print("Не удалось запустить поиск:")
-        sys.exit(1)
+        print("\nЗавершение работы поиска.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

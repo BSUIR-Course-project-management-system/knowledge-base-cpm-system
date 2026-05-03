@@ -1,3 +1,4 @@
+
 from typing import Any, Dict, Optional
 
 from logger.logger import Logger
@@ -93,10 +94,7 @@ class ThemeFinderManager:
         date_priority: Optional[int] = None,
         dist_priority: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """
-        Метод для сортировки результатов по нескольким критериям.
-        Принимает словарь с ключами documents, distances, metadatas.
-        """
+        """Функция сортировки"""
         docs = results.get("documents", [[]])[0]
         dists = results.get("distances", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
@@ -110,11 +108,19 @@ class ThemeFinderManager:
         for i in range(len(docs)):
             meta = metas[i]
 
-            raw_mark = meta.get("rounded_final_grade") or meta.get("mark") or 0
+            raw_mark = meta.get("rounded_final_grade", 0)
             try:
                 mark = float(raw_mark)
             except (ValueError, TypeError):
                 mark = 0.0
+
+            raw_date = str(meta.get("date_defence") or "")
+            sortable_date = ""
+            if len(raw_date) == 10 and "." in raw_date:
+                parts = raw_date.split(".")
+                sortable_date = f"{parts[2]}.{parts[1]}.{parts[0]}"
+            else:
+                sortable_date = raw_date
 
             data_to_sort.append(
                 {
@@ -122,7 +128,7 @@ class ThemeFinderManager:
                     "dist": dists[i],
                     "meta": meta,
                     "mark": mark,
-                    "date": str(meta.get("year") or meta.get("date") or ""),
+                    "date": sortable_date,
                 }
             )
 
@@ -140,15 +146,15 @@ class ThemeFinderManager:
             values = []
             for criterion in active_criteria:
                 if criterion == "mark":
-                    values.append(-item["mark"])
-                elif criterion == "dist":
-                    values.append(item["dist"])
+                    values.append(item["mark"])
                 elif criterion == "date":
                     values.append(item["date"])
+                elif criterion == "dist":
+                    values.append(-item["dist"])
             return tuple(values)
 
         if active_criteria:
-            data_to_sort.sort(key=get_sorting_tuple)
+            data_to_sort.sort(key=get_sorting_tuple, reverse=True)
             self.logger.info(f"Темы отсортированы по: {active_criteria}")
 
         return {
