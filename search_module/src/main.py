@@ -3,13 +3,13 @@ import sys
 from logger.logger import Logger
 from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
-from search_module.src.settings import LOG_FILE, MAX_DISTANCE
+from search_module.src.settings import MAIN_LOG_FILE, MAX_DISTANCE
 from search_module.src.theme_finder_manager import ThemeFinderManager
 from search_module.src.utils import ConsoleThemePrinter, SortMenuPrinter
 
 
 def main():
-    logger = Logger(LOG_FILE, level="INFO")
+    logger = Logger(MAIN_LOG_FILE, level="INFO")
 
     loader = JsonLoader()
     logger.info("Создан объект класса JsonLoader из файла")
