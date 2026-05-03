@@ -1,5 +1,5 @@
 import gspread
-import logging
+# import logging
 import sys
 import os
 import pandas as pd
@@ -8,14 +8,14 @@ import json
 from dotenv import load_dotenv
 
 LOG_FILE = "table_api/logs/google_sheets_api.log"
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout),
-    ],
-)
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format="%(asctime)s | %(levelname)-8s | %(message)s",
+#     handlers=[
+#         logging.FileHandler(LOG_FILE, encoding="utf-8"),
+#         logging.StreamHandler(sys.stdout),
+#     ],
+# )
 load_dotenv()
 CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE")
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
@@ -34,12 +34,13 @@ COLUMNS_FOR_GROUP_FETCHING = [
 class GoogleSheetsParser:
     def __init__(self, credentials_path: str, spreadsheets_ids: list[str]):
         try:
-            logging.info("Попытка авторизации в Google Cloud")
+            # logging.info("Попытка авторизации в Google Cloud")
             self._gserv_acc = gspread.service_account(filename=credentials_path)
-            logging.info("Успешная авторизация в Google Cloud!")
+            # logging.info("Успешная авторизация в Google Cloud!")
             self._spreadsheets = spreadsheets_ids
         except Exception as e:
-            logging.error(f"Непредвиденная ошибка при работе с API: {e}", exc_info=True)
+            # logging.error(f"Непредвиденная ошибка при работе с API: {e}", exc_info=True)
+            pass
 
     def get_raw_data(self):
         pass
@@ -47,19 +48,19 @@ class GoogleSheetsParser:
     def fetch_all_groups(self):
         all_data = {}
         for spreadsheet_id in self._spreadsheets:
-            logging.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
+            # logging.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
             sheet = self._gserv_acc.open_by_key(spreadsheet_id)
-            logging.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
+            # logging.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
 
-            logging.info(f"Начало парсинга документа {sheet.title}")
+            # logging.info(f"Начало парсинга документа {sheet.title}")
             for worksheet in sheet.worksheets():
                 sheet_name = worksheet.title
                 if not (sheet_name.isdigit() and len(sheet_name) == 6):
-                    logging.info(
-                        f"Пропускаем лист с ненужной информацией: {sheet_name}"
-                    )
+                    # logging.info(
+                    #     f"Пропускаем лист с ненужной информацией: {sheet_name}"
+                    # )
                     continue
-                logging.info(f"Начало парсинга листа {sheet_name}")
+                # logging.info(f"Начало парсинга листа {sheet_name}")
                 raw_data = worksheet.get_all_values()
                 if not raw_data or len(raw_data) < 4:
                     continue
@@ -79,8 +80,8 @@ class GoogleSheetsParser:
                     df = df[df["ФИО"].str.strip() != ""]
 
                 all_data[sheet_name] = df.to_dict(orient="records")
-                logging.info(f"Успешный парсинг листа {sheet_name}")
-            logging.info(f"Успешный парсинг документа {sheet.title}")
+            #     logging.info(f"Успешный парсинг листа {sheet_name}")
+            # logging.info(f"Успешный парсинг документа {sheet.title}")
         return all_data
 
     def fetch_examiner_schedule(self):
@@ -97,11 +98,11 @@ class Storage:
         )
 
     def _load_all_group_data(self) -> dict:
-        logging.info("Storage запрашивает данные у парсера...")
+        # logging.info("Storage запрашивает данные у парсера...")
         try:
             return self._parser.fetch_all_groups()
         except Exception as e:
-            logging.error(f"Ошибка при получении данных: {e}")
+            # logging.error(f"Ошибка при получении данных: {e}")
             return {}
 
     def get_unique_topics(self):
@@ -136,7 +137,7 @@ class Storage:
 
     def get_examiner_schedule(self, examiner):
         """Заглушка"""
-        logging.info("Использование данных заглушки для графика")
+        # logging.info("Использование данных заглушки для графика")
         mock_data = {
             "Milestone_1": [],
             "Milestone_2": [

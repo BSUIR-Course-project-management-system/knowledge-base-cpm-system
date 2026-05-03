@@ -2,8 +2,9 @@ from typing import Any, Optional
 
 from sentence_transformers import SentenceTransformer
 
+from logger.logger import Logger
 from search_module.src.data_manager import DataManager
-from search_module.src.settings import PATH_TO_MODEL
+from search_module.src.settings import PATH_TO_MODEL, THEME_FINDER_LOG_FILE
 
 
 class ThemeFinder:
@@ -13,9 +14,12 @@ class ThemeFinder:
         """Функция инициализации"""
         self.model = SentenceTransformer(str(PATH_TO_MODEL))
         self.data_manager = data_manager
+        self.logger = Logger(THEME_FINDER_LOG_FILE, level="INFO")
 
     def make_collection(self) -> None:
         """Функция формирования векторов поиска"""
+
+        self.logger.info("Инициализация создания коллекции векторов")
         if not self.data_manager.data:
             raise RuntimeError(
                 "Данные не загружены. Сначала вызовите data_manager.load()"
@@ -40,6 +44,7 @@ class ThemeFinder:
         collection.add(
             embeddings=embeddings, documents=texts, ids=ids, metadatas=metadatas
         )
+        self.logger.info("Создана коллекция векторов")
 
     def search(
         self,
@@ -50,6 +55,7 @@ class ThemeFinder:
         examiner: Optional[str] = None,
     ) -> Any:
         """Функция векторного поиска"""
+        self.logger.info("Преобразование векторов в список")
         query_emb = self.model.encode([query], show_progress_bar=False).tolist()
 
         conditions = []
@@ -72,4 +78,6 @@ class ThemeFinder:
             include=["documents", "distances", "metadatas"],
             where=where_filter,
         )
+
+        self.logger.info("Поиск окончен")
         return results
