@@ -18,6 +18,9 @@ search_module/
     ├── .venv/
     ├── chroma_db/
     ├── models/
+    ├── scripts/
+    │   ├── setup.bat
+    │   ├── setup.sh
     ├── src/
     │   ├── __init__.py
     │   ├── data_manager.py
@@ -46,4 +49,23 @@ search_module/
 ## Тестирование 
 
 Для тестирования модуля использовалась библиотека **Pytest**, покрытие составило **94%**.
+
+
+## Установка
+
+Для установки необходимых зависимостей полсе клонирования репозитория необходимо запустить файл установки. Для пользователей системы Linux/macOS  - это файл **setup.sh**, а для пользователей **Windows** - **setup.bat**.
+
+После установки всех зависимостей и активации виртуального окружения (*source .venv/bin/activate*, находясь в модуле search_module), находясь в папке **knowledge-base-cpm-system**, нужно выполнить:
+
+* **Windows**
+
+```python
+python -m search_module.src.main
+```
+
+* **Linux/macOS**
+
+```python3
+python3 -m search_module.src.main
+``` 
 
