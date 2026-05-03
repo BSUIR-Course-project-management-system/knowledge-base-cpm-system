@@ -25,3 +25,6 @@ logs/
 
 # Ignore program service data:
 data/
+
+# Ignore db
+**chroma_db/
