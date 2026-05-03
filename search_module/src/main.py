@@ -82,12 +82,12 @@ def main():
                         match user_sort_input:
                             case "1":
                                 filtered = manager.sort_results(
-                                    search_results, mark_priority=1, dist_priority=2
+                                    search_results, mark_priority=1
                                 )
                                 logger.info("Темы отсортированы по оценке")
                             case "2":
                                 filtered = manager.sort_results(
-                                    search_results, date_priority=1, dist_priority=2
+                                    search_results, date_priority=1
                                 )
                                 logger.info("Темы отсортированы по дате")
                             case "3":

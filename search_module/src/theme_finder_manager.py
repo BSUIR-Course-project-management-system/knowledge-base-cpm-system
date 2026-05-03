@@ -1,4 +1,3 @@
-
 from typing import Any, Dict, Optional
 
 from logger.logger import Logger
@@ -110,17 +109,16 @@ class ThemeFinderManager:
 
             raw_mark = meta.get("rounded_final_grade", 0)
             try:
-                mark = float(raw_mark)
+                mark = float(raw_mark) if raw_mark not in (None, "", "null") else 0.0
             except (ValueError, TypeError):
                 mark = 0.0
 
             raw_date = str(meta.get("date_defence") or "")
-            sortable_date = ""
             if len(raw_date) == 10 and "." in raw_date:
                 parts = raw_date.split(".")
                 sortable_date = f"{parts[2]}.{parts[1]}.{parts[0]}"
             else:
-                sortable_date = raw_date
+                sortable_date = "0000.00.00"
 
             data_to_sort.append(
                 {
@@ -140,6 +138,9 @@ class ThemeFinderManager:
         if dist_priority is not None:
             p_map["dist"] = dist_priority
 
+        if "dist" not in p_map:
+            p_map["dist"] = 999
+
         active_criteria = sorted(p_map.keys(), key=lambda x: p_map[x])
 
         def get_sorting_tuple(item):
@@ -155,7 +156,7 @@ class ThemeFinderManager:
 
         if active_criteria:
             data_to_sort.sort(key=get_sorting_tuple, reverse=True)
-            self.logger.info(f"Темы отсортированы по: {active_criteria}")
+            self.logger.info(f"Темы отсортированы по цепочке: {active_criteria}")
 
         return {
             "documents": [[item["doc"] for item in data_to_sort]],
