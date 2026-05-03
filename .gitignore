@@ -8,6 +8,7 @@ ENV/
 
 # Ignore pycache
 __pycache__/
+**.pytest_cache/
 
 # Ignore IDE
 .idea/
@@ -17,10 +18,20 @@ __pycache__/
 # ! WARNING VERY IMPORTANT IGNORE
 *credentials.json
 secrets/
-
+.env
 # Ignore logs
 logs/
 *.log
 
 # Ignore program service data:
 data/
+
+# Ignore db
+**chroma_db/
+
+# Coverage
+**.coverage
+
+#Data
+**group.json
+**data/

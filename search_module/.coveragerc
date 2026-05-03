@@ -1,0 +1,12 @@
+[run]
+omit =
+    search_module/src/main.py
+    search_module/src/utils.py
+    **/tests/*
+    **/__init__.py
+
+[report]
+show_missing = True
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
