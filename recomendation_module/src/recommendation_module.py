@@ -220,7 +220,7 @@ class RecommendationModule:
                 else None
             )
             similarity = float(np.dot(query_embedding, document_embeddings[index]))
-            similarity_label = self._similarity_label(similarity)
+            similarity_label = self._similarity_grade(similarity)
             explanation = self._build_search_explanation(
                 query=query,
                 document=document,
@@ -256,7 +256,7 @@ class RecommendationModule:
         document_keywords = self._extract_keywords(document)
         matched_keywords = self._match_keywords(query_keywords, document_keywords)
         document_focus = self._document_focus(document_keywords, matched_keywords)
-        similarity_label = self._similarity_label(similarity)
+        similarity_label = self._similarity_explanation_label(similarity)
 
         score_part = (
             f"Тема выбрана, потому что модель поиска увидела {similarity_label} семантическую близость "
@@ -348,7 +348,18 @@ class RecommendationModule:
 
         return token
 
-    def _similarity_label(self, similarity: float) -> str:
+    def _similarity_grade(self, similarity: float) -> str:
+        if math.isclose(similarity, 0.0, abs_tol=1e-6):
+            return "нулевая"
+        if similarity >= 0.75:
+            return "очень высокая"
+        if similarity >= 0.55:
+            return "высокая"
+        if similarity >= 0.35:
+            return "умеренная"
+        return "заметная"
+
+    def _similarity_explanation_label(self, similarity: float) -> str:
         if math.isclose(similarity, 0.0, abs_tol=1e-6):
             return "нулевую"
         if similarity >= 0.75:
@@ -413,8 +424,7 @@ class RecommendationModule:
 
         if not description:
             description = (
-                "Подробное описание не найдено. В recommendation_module "
-                "сейчас загружаются описания только из набора тем за 2026 год."
+                "Описание будет добавлено позже."
             )
 
         curator = curator or "Нет данных"
