@@ -45,7 +45,7 @@ class ProgramCLI(cmd.Cmd):
         """Ленивая инициализация модуля рекомендаций и поиска.
         Выполняется однократно или после обновления данных из облака.
         """
-        if self._rec_module is not None:
+        if self._recomendation_module is not None:
             return True
 
         try:
@@ -125,7 +125,8 @@ class ProgramCLI(cmd.Cmd):
         console.print("- [green]exit[/]  — выйти из программы\n")
 
     def do_recomend(self, arg):
-        if not self._init_recommendation_backend():
+        if not self._recomendation_module:
+            self._init_recommendation_backend()
             return
         console.print(
             "[bold cyan] Режим рекомендаций. Нажмите Ctrl+C или введите 'exit' для выхода.[/]"
