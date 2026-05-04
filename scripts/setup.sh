@@ -15,9 +15,16 @@ echo "Все необходимые библиотеки установлены"
 
 echo "Установка ситемы поиска"
 
-chmod +x search_module/scripts/setup.sh
-
-./search_module/scripts/setup.sh
+python3 -c "
+from sentence_transformers import SentenceTransformer
+import os
+path = 'search_module/models/all-MiniLM-L6-v2'
+os.makedirs(path, exist_ok=True)
+print('Скачивание весов')
+model = SentenceTransformer('all-MiniLM-L6-v2')
+model.save(path)
+print('Модель сохранена в ' + path)
+"
 
 touch table_api/.env
 
