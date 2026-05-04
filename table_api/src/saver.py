@@ -20,7 +20,7 @@ class JsonSaver(ISaver):
         self._ensure_ascii = ensure_ascii
         self._logger = Logger(LOG_FILE, level="INFO")
 
-    def save(self, file_path: str, data: dict) -> None:
+    def save(self, file_path: str, data) -> None:
         try:
             with open(file_path, "w", encoding=self._encoding) as f:
                 self._logger.info(f"Попытка сохранения в файл {file_path}")
