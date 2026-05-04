@@ -124,10 +124,10 @@ class ProgramCLI(cmd.Cmd):
         )
         console.print("- [green]exit[/]  — выйти из программы\n")
 
-    def do_recomend(self, arg):
+    def do_recommend(self, arg):
         if not self._recomendation_module:
             self._init_recommendation_backend()
-            return
+
         console.print(
             "[bold cyan] Режим рекомендаций. Нажмите Ctrl+C или введите 'exit' для выхода.[/]"
         )
@@ -176,13 +176,15 @@ class ProgramCLI(cmd.Cmd):
                 with console.status(
                     "[bold green]Поиск и генерация описаний...", spinner="dots"
                 ):
-                    recommendations = self._rec_module.search_with_explanations(
-                        query=query,
-                        n_results=4,
-                        max_distance=MAX_DISTANCE,
-                        is_used=is_used,
-                        curator=curator,
-                        examiner=examiner,
+                    recommendations = (
+                        self._recomendation_module.search_with_explanations(
+                            query=query,
+                            n_results=4,
+                            max_distance=MAX_DISTANCE,
+                            is_used=is_used,
+                            curator=curator,
+                            examiner=examiner,
+                        )
                     )
 
                 if not recommendations:
