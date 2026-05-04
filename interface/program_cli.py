@@ -36,7 +36,9 @@ class ProgramCLI(cmd.Cmd):
     def __init__(self, table_module: "Storage"):
         self._table_module = table_module
         self._is_relevant = False
+        self._manager = None
         self._recomendation_module = None
+
         super().__init__()
 
     def _init_recommendation_backend(self) -> bool:
@@ -55,7 +57,9 @@ class ProgramCLI(cmd.Cmd):
                 self._manager = ThemeFinderManager(loader, saver)
                 self._manager.process_data()
                 self._manager.prepare_search()
-                self._rec_module = RecommendationModule(search_manager=self._manager)
+                self._recomendation_module = RecommendationModule(
+                    search_manager=self._manager
+                )
             console.print("[bold green] Модуль успешно загружен![/]")
             return True
         except Exception as e:
@@ -111,7 +115,7 @@ class ProgramCLI(cmd.Cmd):
 
         console.print()
         console.print("[bold cyan]Быстрый старт:[/bold cyan]")
-        console.print("- [green]recomend[/]   — рекомендация темы проекта")
+        console.print("- [green]recommend[/]   — рекомендация темы проекта")
         console.print(
             "- [green]schedule_generate[/] — сгенерировать расписание приема опроцентовок для преподавателя(проверяющего)"
         )
