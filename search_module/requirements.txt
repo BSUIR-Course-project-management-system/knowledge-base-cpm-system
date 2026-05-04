@@ -4,3 +4,4 @@ gspread==6.2.1
 pandas==3.0.2
 google-api-python-client==2.195.0
 pytest==9.0.3
+pytest-cov==7.1.0
