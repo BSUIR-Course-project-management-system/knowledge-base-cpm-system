@@ -1,0 +1,132 @@
+from .config_parser import BaseParser
+from datetime import datetime, timedelta
+from typing import List, Optional, Tuple
+from .date_checker import DateChecker
+from .logger import logger
+
+
+class SheduleGenerator:
+    """
+    Класс, который генерирует расписание
+    """
+
+    def __init__(self, config_parser: BaseParser, date_checker: DateChecker) -> None:
+        """Конструктор класса
+
+        Args:
+            config_parser (BaseParser): Парсер конфиг-файла
+            date_checker (DateChecker): Объект DatrChecekr для проверки дат
+        """
+        self.config_parser = config_parser
+        self.date_checker = date_checker
+        self._init_variables()
+
+    def _init_variables(self) -> None:
+        """
+        Метод для инициализации переменных объекта значениями из конфиг-файла
+        """
+        data = self.config_parser.parse_config("config/settings.yaml")
+        self.WORK_START_HOUR = data["work_start"]
+        self.WORK_END_HOUR = data["work_end"]
+        self.STEP_MINUTES = data["step"]
+
+    def generate_candidate_starts(
+        self,
+        start_dt: datetime,
+        end_dt: datetime,
+        duration_minutes: int,
+        occupied_intervals: List[Tuple[datetime, datetime]],
+    ) -> List[datetime]:
+        """Метод для получения потенциальных дат со временем для опроцентовок
+
+        Args:
+            start_dt (datetime): Дата принятия проекта
+            end_dt (datetime): Дата защиты проекта
+            duration_minutes (int): Продолжительность опроцентовки
+            occupied_intervals (List[Tuple[datetime, datetime]]): Занятые дни со временем
+
+        Returns:
+            List[datetime]: Потенциальные datetime объекты для опроцентовок
+        """
+        logger.info("Начало получения потенциальных дат с временем для опроцентовок")
+        candidates = []
+        current_day = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        while current_day <= end_dt:
+            day_start = current_day.replace(hour=self.WORK_START_HOUR, minute=0)
+            day_end = current_day.replace(hour=self.WORK_END_HOUR, minute=0)
+            slot_start = max(day_start, start_dt)
+            minutes_since_midnight = slot_start.hour * 60 + slot_start.minute
+            remainder = minutes_since_midnight % self.STEP_MINUTES
+            if remainder != 0:
+                slot_start += timedelta(minutes=self.STEP_MINUTES - remainder)
+            while slot_start + timedelta(minutes=duration_minutes) <= min(
+                day_end, end_dt
+            ):
+                slot_end = slot_start + timedelta(minutes=duration_minutes)
+                conflict = False
+                for occ_start, occ_end in occupied_intervals:
+                    if slot_start < occ_end and slot_end > occ_start:
+                        conflict = True
+                        break
+                slot_date = slot_start.date()
+                if not conflict and self.date_checker.is_work_day(slot_date):
+                    logger.info(f"Дата {slot_start} подходит")
+                    candidates.append(slot_start)
+                slot_start += timedelta(minutes=self.STEP_MINUTES)
+            current_day += timedelta(days=1)
+        logger.info("Потенциальные даты для опроцентовок с временем успешно получены.")
+        return candidates
+
+    def select_slots(
+        self,
+        candidates: List[datetime],
+        start_dt: datetime,
+        end_dt: datetime,
+        num_points: int = 3,
+    ) -> Optional[List[datetime]]:
+        """Метод для получения 3 дат и времени для проведения опроцентовок по проекту
+
+        Args:
+            candidates (List[datetime]): Потенциальные даты для проведения опроцентовок
+            start_dt (datetime): Дата принятия проекта
+            end_dt (datetime): Дата
+            num_points (int, optional): Количество опроцентовок в семестре. По умолчанию 3.
+
+        Returns:
+            Optional[List[datetime]]: Список с датами опроцентовок и временем их проведения
+        """
+        if len(candidates) < num_points:
+            return None
+
+        logger.info("Начало получения времени для опроцентовок")
+        total_secs = (end_dt - start_dt).total_seconds()
+        ideal_offsets = [
+            total_secs * (i + 1) / (num_points + 1) for i in range(num_points)
+        ]
+        logger.info("Получение идеального времени для опроцентовок")
+
+        selected = []
+        used_indices = set()
+
+        for ideal_sec in ideal_offsets:
+            target = start_dt + timedelta(seconds=ideal_sec)
+            best_idx = -1
+            best_dist = float("inf")
+            for idx, cand in enumerate(candidates):
+                if idx in used_indices:
+                    continue
+                if selected and cand <= selected[-1]:
+                    continue
+                dist = abs((cand - target).total_seconds())
+                if dist < best_dist:
+                    best_dist = dist
+                    best_idx = idx
+            if best_idx == -1:
+                step = len(candidates) / (num_points + 1)
+                indices = [int(step * (i + 1)) for i in range(num_points)]
+                logger.info("Время опроцентовок успешно получено")
+                return [candidates[i] for i in indices]
+            selected.append(candidates[best_idx])
+            used_indices.add(best_idx)
+        logger.info("Время опроцентовок успешно получено")
+        return sorted(selected)
