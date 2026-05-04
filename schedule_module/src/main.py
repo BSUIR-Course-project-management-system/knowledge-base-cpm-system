@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from .datetime_parser import DatetimeParser
 from .config_parser import YamlParser
 from .schedule_generator import SheduleGenerator
-from table_api.storage import Storage
+from table_api.src.storage import Storage
 from .date_checker import DateChecker
 from .logger import logger, LOG_FILE
 from .utills import clear_logs
