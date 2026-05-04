@@ -51,7 +51,7 @@ def main():
 
                 search_results = manager.search_relevant(
                     query,
-                    n_results=60,
+                    n_results=100,
                     max_distance=MAX_DISTANCE,
                     is_used=is_used,
                     curator=curator,
