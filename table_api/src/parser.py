@@ -4,10 +4,12 @@ import re
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from typing import Any
-from loader import ILoader, JsonLoader
+from table_api.src.loader import ILoader, JsonLoader
+from logger.logger import Logger
 
 GROUP_TABLE_COLUMN_MAPPING = "table_api/config/column_mapping.json"
 BOOLEAN_MAPPING = "table_api/config/boolean_mapping.json"
+LOG_FILE = "table_api/logs/parser.log"
 
 
 class GoogleSheetsParser:
@@ -20,10 +22,11 @@ class GoogleSheetsParser:
     HIERARCHY_DIVIDE_SYMBOL = "␟"
 
     def __init__(self, credentials_path: str):
+        self._logger = Logger(LOG_FILE, level="INFO")
         try:
-            # logging.info("Попытка авторизации в Google Cloud")
+            self._logger.info("Попытка авторизации в Google Cloud")
             self._gserv_acc = gspread.service_account(filename=credentials_path)
-            # logging.info("Успешная авторизация в Google Cloud!")
+            self._logger.info("Успешная авторизация в Google Cloud!")
 
             credentials = service_account.Credentials.from_service_account_file(
                 credentials_path,
@@ -33,8 +36,9 @@ class GoogleSheetsParser:
             self._drive_service = build("drive", "v3", credentials=credentials)
 
         except Exception as e:
-            pass
-            # logging.error(f"Непредвиденная ошибка при работе с API: {e}", exc_info=True)
+            self._logger.error(
+                f"Непредвиденная ошибка при работе с API: {e}", exc_info=True
+            )
 
     def get_all_sheets_in_folder(self, folder_id: str) -> list:
         """
@@ -45,15 +49,15 @@ class GoogleSheetsParser:
         :return: Список ID найденных Google Sheets
         :rtype: list
         """
-        # logging.info(f"Начинаем поиск Google Таблиц в папке с ID: {folder_id}")
+        self._logger.info(f"Начинаем поиск Google Таблиц в папке с ID: {folder_id}")
         sheet_ids = []
         page_token = None
         query = f"mimeType='application/vnd.google-apps.spreadsheet' and '{folder_id}' in parents and trashed = false"
         try:
             while True:
-                # logging.debug(
-                # "Отправка запроса к Google Drive API для получения списка файлов..."
-                # )
+                self._logger.debug(
+                    "Отправка запроса к Google Drive API для получения списка файлов..."
+                )
                 response = (
                     self._drive_service.files()
                     .list(
@@ -67,32 +71,32 @@ class GoogleSheetsParser:
 
                 files = response.get("files", [])
                 if not files:
-                    pass
-                    # logging.debug("На данной странице (итерации) таблиц не найдено.")
+                    self._logger.debug(
+                        "На данной странице (итерации) таблиц не найдено."
+                    )
 
                 for file in files:
-                    # logging.info(
-                    #     f"Найдена таблица: '{file.get('name')}' (ID: {file.get('id')})"
-                    # )
+                    self._logger.info(
+                        f"Найдена таблица: '{file.get('name')}' (ID: {file.get('id')})"
+                    )
                     sheet_ids.append(file.get("id"))
 
                 page_token = response.get("nextPageToken")
                 if not page_token:
-                    # logging.info(
-                    #     "Поиск таблиц в папке успешно завершен. Больше страниц нет."
-                    # )
+                    self._logger.info(
+                        "Поиск таблиц в папке успешно завершен. Больше страниц нет."
+                    )
                     break
 
         except Exception as e:
-            pass
-            # logging.error(
-            #     f"Критическая ошибка при поиске файлов на Google Диске: {e}",
-            #     exc_info=True,
-            # )
+            self._logger.error(
+                f"Критическая ошибка при поиске файлов на Google Диске: {e}",
+                exc_info=True,
+            )
 
-        # logging.info(
-        #     f"Итог: найдено {len(sheet_ids)} таблиц(ы) для последующего парсинга."
-        # )
+        self._logger.info(
+            f"Итог: найдено {len(sheet_ids)} таблиц(ы) для последующего парсинга."
+        )
         return sheet_ids
 
     @staticmethod
@@ -137,10 +141,10 @@ class GoogleSheetsParser:
         :return: Маппинг, `None` в случае отсутствия файла.
         :rtype: dict | None
         """
-        mapping = loader.load(GROUP_TABLE_COLUMN_MAPPING)
+        mapping = loader.load(file_path)
         if not mapping:
             mapping = None
-            # logging.warning("Файл маппинга не найден")
+            self._logger.warning("Файл маппинга не найден")
         if reversed and mapping:
             return self._build_reverse_mapping(mapping)
         return mapping
@@ -265,17 +269,14 @@ class GoogleSheetsParser:
         df = pd.DataFrame(padded[header_rows:], columns=col_keys)
 
         mapping = self._load_mapping(GROUP_TABLE_COLUMN_MAPPING, reversed=True)
-        # print(df.columns)
 
         if mapping:
             new_cols = []
             for column in df.columns:
                 norm = self._normalize(column)
-                # print(f"norm {norm}")
                 target = mapping.get(norm)
                 if divide_symbol in column:
                     target_parts = norm.split(divide_symbol)
-                    # print(f"target_parts {target_parts}")
                     normalized_parts = []
                     for part in target_parts:
                         normalized_part = self._normalize(part)
@@ -285,7 +286,6 @@ class GoogleSheetsParser:
                             normalized_part = self._replace_preserving_suffix(
                                 normalized_part, mapping
                             )
-                            # print(f"re:{norm}")
 
                         normalized_parts.append(normalized_part)
 
@@ -332,34 +332,32 @@ class GoogleSheetsParser:
         """
         sheet_name = worksheet.title
         if not (sheet_name.isdigit() and len(sheet_name) == 6):
-            # logging.info(f"Передан не тот лист: {sheet_name}")
+            self._logger.info(f"Передан не тот лист: {sheet_name}")
             return None
 
-        # logging.info(f"Начало парсинга листа {sheet_name}")
+        self._logger.info(f"Начало парсинга листа {sheet_name}")
 
         divide_symbol = GoogleSheetsParser.HIERARCHY_DIVIDE_SYMBOL
 
         raw = worksheet.get_all_values(combine_merged_cells=True)
 
         if not raw or len(raw) < 2:
-            # logging.warning(f"Лист {sheet_name} пуст или содержит меньше 2 строк")
+            self._logger.warning(f"Лист {sheet_name} пуст или содержит меньше 2 строк")
             return None
 
         df = self._get_structured_group_table_data_frame(raw, divide_symbol)
         df = df.replace("", None)
-
         # Сворачиваем в список вложенных словарей
         records = [
             self._table_row_to_nested_dicts(row, divide_symbol)
             for _, row in df.iterrows()
         ]
-        # logging.info(f"Успешный парсинг листа {sheet_name}, записей: {len(records)}")
+        self._logger.info(
+            f"Успешный парсинг листа {sheet_name}, записей: {len(records)}"
+        )
         return records
 
-    def _parse_milestone_info(self, worksheet: gspread.Worksheet):
-        pass
-
-    def _parse_themes_info(self, worksheet: gspread.Worksheet):
+    def _parse_topics_info(self, worksheet: gspread.Worksheet):
         """
         Функция парсинга листа с данными о темах.
 
@@ -371,14 +369,16 @@ class GoogleSheetsParser:
         sheet_name = worksheet.title
         expected_sheet_name = "Темы"
         if self._normalize(expected_sheet_name) not in self._normalize(sheet_name):
-            # logging.info(f"Передан не тот лист (нужен Темы): {sheet_name}")
+            self._logger.info(
+                f"Передан не тот лист : {sheet_name}(нужен {expected_sheet_name})"
+            )
             return None
 
-        # logging.info(f"Начало парсинга листа {sheet_name}")
+        self._logger.info(f"Начало парсинга листа {sheet_name}")
         divide_symbol = GoogleSheetsParser.HIERARCHY_DIVIDE_SYMBOL
         raw = worksheet.get_all_values(combine_merged_cells=True)
         if not raw or len(raw) < 2:
-            # logging.warning(f"Лист {sheet_name} пуст или содержит меньше 2 строк")
+            self._logger.warning(f"Лист {sheet_name} пуст или содержит меньше 2 строк")
             return None
 
         df = self._get_structured_group_table_data_frame(raw, divide_symbol)
@@ -389,77 +389,205 @@ class GoogleSheetsParser:
             self._table_row_to_nested_dicts(row, divide_symbol)
             for _, row in df.iterrows()
         ]
-        # logging.info(f"Успешный парсинг листа {sheet_name}, записей: {len(records)}")
-        print(records)
+        self._logger.info(
+            f"Успешный парсинг листа {sheet_name}, записей: {len(records)}"
+        )
         return records
 
-    def upload_all_data_to_json(self, spreadsheets: list[str]):
+    def _parse_sub_tables(
+        self, raw_table: list, separator_text: str, separator_key: str
+    ):
         """
-        Функция загрузки всех данных из таблиц в `json` файлы.
+        Универсальная логика для листов, содержащих несколько подтаблиц.
+        """
+        sub_tables = {}
+
+        header_row_idx = -1
+        col_indices = []
+        table_names = []
+
+        for r_idx, row in enumerate(raw_table):
+            prev_cell = ""
+            for c_idx, cell in enumerate(row):
+                cell_str = self._normalize(str(cell))
+
+                if separator_text in cell_str and prev_cell != cell_str:
+                    header_row_idx = r_idx
+                    match = re.search(r"\d+", cell_str)
+                    col_indices.append(c_idx)
+                    table_names.append(f"{separator_key}{match.group()}")
+                prev_cell = cell_str
+            if col_indices:
+                break
+
+        if not col_indices:
+            return {}
+
+        for i in range(len(col_indices)):
+            start_col = col_indices[i]
+            end_col = (
+                col_indices[i + 1]
+                if i + 1 < len(col_indices)
+                else len(raw_table[header_row_idx])
+            )
+            table_name = table_names[i]
+
+            sub_raw_table = []
+
+            for row in raw_table[header_row_idx + 1 :]:
+                padded_row = (
+                    row + [""] * (end_col - len(row)) if len(row) < end_col else row
+                )
+
+                sub_row = padded_row[start_col:end_col]
+
+                if any(str(c).strip() for c in sub_row):
+                    sub_raw_table.append(sub_row)
+
+            if not sub_raw_table or len(sub_raw_table) < 2:
+                continue
+
+            last_valid_col = -1
+            num_cols = len(sub_raw_table[0])
+
+            for col_idx in range(num_cols):
+                if any(
+                    str(row[col_idx]).strip() != ""
+                    for row in sub_raw_table
+                    if col_idx < len(row)
+                ):
+                    last_valid_col = col_idx
+
+            if last_valid_col != -1:
+                sub_raw_table = [row[: last_valid_col + 1] for row in sub_raw_table]
+
+            df = self._get_structured_group_table_data_frame(
+                sub_raw_table, GoogleSheetsParser.HIERARCHY_DIVIDE_SYMBOL
+            )
+
+            # Удаляем дублирующиеся столбцы (чтобы df["topic"] не ломался)
+            df = df.loc[:, ~df.columns.duplicated()].copy()
+
+            if "examiner" in df.columns:
+                df["examiner"] = df["examiner"].replace("", pd.NA).ffill()
+                df["numb"] = df["numb"].replace("", pd.NA).ffill()
+
+            if "topic" in df.columns:
+                df = df.dropna(subset=["topic"])
+                df = df[df["topic"].astype(str).str.strip() != ""]
+
+            df = df.fillna("")
+
+            sub_tables[table_name] = df.to_dict(orient="records")
+
+        return sub_tables
+
+    def _parse_milestone_schedule_info(self, worksheet: gspread.Worksheet):
+        sheet_name = worksheet.title
+        self._logger.info(f"Начало парсинга листа {sheet_name}")
+        divide_symbol = GoogleSheetsParser.HIERARCHY_DIVIDE_SYMBOL
+
+        raw = worksheet.get_all_values(combine_merged_cells=True)
+
+        if not raw or len(raw) < 2:
+            self._logger.warning(f"Лист {sheet_name} пуст или содержит меньше 2 строк")
+            return None
+
+        return (
+            self._parse_sub_tables(
+                raw, separator_text="опроцентов", separator_key="milestone_"
+            ),
+        )
+
+    # TODO: написать универсальный роутер по типам листов
+
+    def get_all_data_from_cloud(self, spreadsheets: list[str]) -> dict:
+        """
+        Функция загрузки всех данных из облака в словарь проиндексированный по типу данных в нем
 
         :param spreadsheets: Список ID таблиц
         :type spreadsheets: list[str]
+        :return: Все данные из облака(данные групп, данные тем, расписание опроцентовок) проиндексированные по типу ``data["name_data"]``
+        :rtype: dict
         """
+        all_data = {}
         group_data = {}
+        topic_data = {}
+        schedule_data = {}
         for spreadsheet_id in spreadsheets:
-            # logging.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
+            self._logger.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
             sheet = self._gserv_acc.open_by_key(spreadsheet_id)
-            # logging.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
+            self._logger.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
 
-            # logging.info(f"Начало парсинга документа {sheet.title}")
+            self._logger.info(f"Начало парсинга документа {sheet.title}")
             for worksheet in sheet.worksheets():
                 sheet_name = worksheet.title
+                self._logger.info(f"Парсинг листа: {sheet_name}")
                 if sheet_name.isdigit() and len(sheet_name) == 6:
-                    # logging.info(f"Парсинг листа группы: {sheet_name}")
-                    parsed_worksheet = self._parse_group_info(worksheet=worksheet)
+                    group_worksheet = self._parse_group_info(worksheet=worksheet)
 
-                    if not parsed_worksheet:
-                        # logging.warning(f"Лист {sheet_name} пуст")
+                    if not group_worksheet:
+                        self._logger.warning(f"Лист {sheet_name} пуст")
                         continue
-                    # logging.warning(f"Лист {sheet.title} пуст")
-                    # print(
-                    #     json.dumps(
-                    #         self._parse_themes_info(worksheet=worksheet),
-                    #         ensure_ascii=False,
-                    #         indent=2,
-                    #     )
-                    # )
+                    self._logger.warning(f"Лист {sheet.title} пуст")
 
-                group_data[sheet_name] = parsed_worksheet
+                    group_data[sheet_name] = group_worksheet
 
-                # logging.info(f"Успешный парсинг листа {sheet_name}")
+                elif self._normalize("Темы") in self._normalize(sheet_name):
+                    topic_worksheet = self._parse_topics_info(worksheet=worksheet)
+                    if not topic_worksheet:
+                        self._logger.warning(f"Лист {sheet_name} пуст")
+                        continue
+                    year_of_topics = re.search(r"\d{4}", sheet.title)
+                    key = year_of_topics.group() if year_of_topics else "default"
+                    topic_data[key] = topic_worksheet
 
-            # logging.info(f"Успешный парсинг документа {sheet.title}")
-        pass
+                elif self._normalize("график опроцентов") in self._normalize(
+                    sheet_name
+                ):
+                    schedule_worksheet = self._parse_milestone_schedule_info(
+                        worksheet=worksheet
+                    )
+                    year_of_topics = re.search(r"\d{4}", sheet.title)
+                    key = year_of_topics.group() if year_of_topics else "default"
+                    schedule_data[key] = schedule_worksheet
+                else:
+                    self._logger.info(f"Необработанный тип листа: {sheet_name}")
+
+                self._logger.info(f"Успешный парсинг листа {sheet_name}")
+
+            self._logger.info(f"Успешный парсинг документа {sheet.title}")
+        all_data["group_data"] = group_data
+        all_data["topic_data"] = topic_data
+        all_data["schedule_data"] = schedule_data
+        return all_data
 
     def fetch_all_groups(self, spreadsheets: list[str]):
         all_data = {}
         for spreadsheet_id in spreadsheets:
-            # logging.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
+            self._logger.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
             sheet = self._gserv_acc.open_by_key(spreadsheet_id)
-            # logging.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
+            self._logger.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
 
-            # logging.info(f"Начало парсинга документа {sheet.title}")
+            self._logger.info(f"Начало парсинга документа {sheet.title}")
             for worksheet in sheet.worksheets():
                 sheet_name = worksheet.title
-
                 parsed_worksheet = self._parse_group_info(worksheet=worksheet)
-
                 if not parsed_worksheet:
                     continue
 
                 all_data[sheet_name] = parsed_worksheet
-                # logging.info(f"Успешный парсинг листа {sheet_name}")
+                self._logger.info(f"Успешный парсинг листа {sheet_name}")
 
-            # logging.info(f"Успешный парсинг документа {sheet.title}")
+            self._logger.info(f"Успешный парсинг документа {sheet.title}")
 
         return all_data
 
     def fetch_examiner_schedule(self, spreadsheets: list[str]):
         for spreadsheet_id in spreadsheets:
-            # logging.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
+            self._logger.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
             sheet = self._gserv_acc.open_by_key(spreadsheet_id)
-            # logging.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
+            self._logger.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
 
-            # logging.info(f"Начало парсинга документа {sheet.title}")
-            # logging.error(f"Ошибка парсинга(не реализовано) {sheet.title}")
+            self._logger.info(f"Начало парсинга документа {sheet.title}")
+            self._logger.error(f"Ошибка парсинга(не реализовано) {sheet.title}")
