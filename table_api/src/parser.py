@@ -36,9 +36,7 @@ class GoogleSheetsParser:
             self._drive_service = build("drive", "v3", credentials=credentials)
 
         except Exception as e:
-            self._logger.error(
-                f"Непредвиденная ошибка при работе с API: {e}", exc_info=True
-            )
+            self._logger.error(f"Непредвиденная ошибка при работе с API: {e}")
 
     def get_all_sheets_in_folder(self, folder_id: str) -> list:
         """
@@ -507,7 +505,7 @@ class GoogleSheetsParser:
         if "график опроцентов" not in sheet_name:
             self._logger.info(f"Передан не тот лист: {sheet_name}")
             return None
-        divide_symbol = GoogleSheetsParser.HIERARCHY_DIVIDE_SYMBOL
+        # divide_symbol = GoogleSheetsParser.HIERARCHY_DIVIDE_SYMBOL
 
         raw = worksheet.get_all_values(combine_merged_cells=True)
 
