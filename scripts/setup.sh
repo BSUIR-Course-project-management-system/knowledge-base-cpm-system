@@ -19,6 +19,11 @@ chmod +x search_module/scripts/setup.sh
 
 ./search_module/scripts/setup.sh
 
+touch .env
+
+.env.example > .env
+
+
 echo "Система поиска успешно установлена!"
 
 
