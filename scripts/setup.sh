@@ -32,6 +32,8 @@ cp table_api/.env.example table_api/.env
 
 mkdir table_api/secrets/
 
+mkdir search_module/data/
+
 
 echo "Система поиска успешно установлена!"
 
