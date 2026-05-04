@@ -148,15 +148,13 @@ class Storage:
 
         return json.dumps(formatted_topics, indent=2, ensure_ascii=False)
 
-    def get_examiner_schedule(self, examiner):
+    def get_examiner_schedule(self):
         """Заглушка"""
         self._logger.info("Использование данных заглушки для графика")
-        mock_data = {
-            "Milestone_1": [],
-            "Milestone_2": [],
-            "Milestone_3": [],
-        }
-        json_result = json.dumps(mock_data, ensure_ascii=False, indent=2)
+        data = self._parser.fetch_examiner_schedule(
+            self._parser.get_all_sheets_in_folder(FOLDER_ID)
+        )
+        json_result = json.dumps(data, ensure_ascii=False, indent=2)
 
         return json_result
 
@@ -164,4 +162,4 @@ class Storage:
 if __name__ == "__main__":
     storage = Storage()
     storage.update_data_from_cloud()
-    storage.get_unique_topics()
+    # print(storage.get_examiner_schedule())
