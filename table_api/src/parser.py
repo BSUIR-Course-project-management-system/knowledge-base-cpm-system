@@ -394,6 +394,22 @@ class GoogleSheetsParser:
         )
         return records
 
+    def _parse_time_range(self, raw_time_str):
+        """
+        Разбивает строку времени по тире и возвращает словарь.
+        """
+        raw_time_str = str(raw_time_str).strip()
+        if not raw_time_str:
+            return {"start": "", "end": ""}
+
+        normalized_str = raw_time_str.replace("—", "-").replace("–", "-")
+
+        if "-" in normalized_str:
+            parts = normalized_str.split("-", 1)
+            return {"start": parts[0].strip(), "end": parts[1].strip()}
+        else:
+            return {"start": raw_time_str, "end": ""}
+
     def _parse_sub_tables(
         self, raw_table: list, separator_text: str, separator_key: str
     ):
@@ -476,6 +492,9 @@ class GoogleSheetsParser:
                 df = df.dropna(subset=["topic"])
                 df = df[df["topic"].astype(str).str.strip() != ""]
 
+            if "time" in df.columns:
+                df["time"] = df["time"].apply(self._parse_time_range)
+
             df = df.fillna("")
 
             sub_tables[table_name] = df.to_dict(orient="records")
@@ -483,8 +502,11 @@ class GoogleSheetsParser:
         return sub_tables
 
     def _parse_milestone_schedule_info(self, worksheet: gspread.Worksheet):
-        sheet_name = worksheet.title
+        sheet_name = self._normalize(worksheet.title)
         self._logger.info(f"Начало парсинга листа {sheet_name}")
+        if "график опроцентов" not in sheet_name:
+            self._logger.info(f"Передан не тот лист: {sheet_name}")
+            return None
         divide_symbol = GoogleSheetsParser.HIERARCHY_DIVIDE_SYMBOL
 
         raw = worksheet.get_all_values(combine_merged_cells=True)
@@ -493,10 +515,8 @@ class GoogleSheetsParser:
             self._logger.warning(f"Лист {sheet_name} пуст или содержит меньше 2 строк")
             return None
 
-        return (
-            self._parse_sub_tables(
-                raw, separator_text="опроцентов", separator_key="milestone_"
-            ),
+        return self._parse_sub_tables(
+            raw, separator_text="опроцентов", separator_key="milestone_"
         )
 
     # TODO: написать универсальный роутер по типам листов
@@ -584,10 +604,25 @@ class GoogleSheetsParser:
         return all_data
 
     def fetch_examiner_schedule(self, spreadsheets: list[str]):
+        all_data = {}
         for spreadsheet_id in spreadsheets:
             self._logger.info(f"Попытка открытия таблицы с ID: {spreadsheet_id}")
             sheet = self._gserv_acc.open_by_key(spreadsheet_id)
             self._logger.info(f"Таблица с '{sheet.title}' успешно найдена и открыта")
 
             self._logger.info(f"Начало парсинга документа {sheet.title}")
-            self._logger.error(f"Ошибка парсинга(не реализовано) {sheet.title}")
+            for worksheet in sheet.worksheets():
+                sheet_name = worksheet.title
+                parsed_worksheet = self._parse_milestone_schedule_info(
+                    worksheet=worksheet
+                )
+                if not parsed_worksheet:
+                    continue
+
+                year_of_topics = re.search(r"\d{4}", sheet.title)
+                key = year_of_topics.group() if year_of_topics else "default"
+                all_data[key] = parsed_worksheet
+                self._logger.info(f"Успешный парсинг листа {sheet_name}")
+
+            self._logger.info(f"Успешный парсинг документа {sheet.title}")
+        return all_data
