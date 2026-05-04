@@ -14,7 +14,6 @@ from recomendation_module.src.settings import (
     RECOMMENDATION_RANKING_LOG_FILE,
     RECOMMENDATION_TOPIC_LOG_FILE,
     TOPIC_DATA_FILE,
-    TOPIC_DATA_YEAR,
 )
 from search_module.src.settings import MAX_DISTANCE
 
@@ -125,9 +124,7 @@ class RecommendationModule:
         self.search_logger = Logger(str(RECOMMENDATION_RANKING_LOG_FILE), level="INFO")
         self.topic_logger = Logger(str(RECOMMENDATION_TOPIC_LOG_FILE), level="INFO")
         self.topic_catalog = self._load_topic_catalog()
-        self.topic_lookup = {
-            item["_normalized_topic"]: item for item in self.topic_catalog
-        }
+        self.topic_lookup = self._build_topic_lookup(self.topic_catalog)
 
     @property
     def model(self) -> SentenceTransformer:
@@ -385,23 +382,52 @@ class RecommendationModule:
             )
             return []
 
-        topics_for_year = raw_data.get(TOPIC_DATA_YEAR, [])
         catalog: list[dict[str, Any]] = []
-        for item in topics_for_year:
-            topic = str(item.get("topic", "")).strip()
-            if not topic:
+        for year, topics_for_year in raw_data.items():
+            if not isinstance(topics_for_year, list):
                 continue
 
-            catalog_item = {
-                "topic": topic,
-                "description": str(item.get("description") or "").strip(),
-                "curator": str(item.get("curator") or "").strip(),
-                "examiner": str(item.get("examiner") or "").strip(),
-                "_normalized_topic": self._normalize_topic_name(topic),
-            }
-            catalog.append(catalog_item)
+            for item in topics_for_year:
+                if not isinstance(item, dict):
+                    continue
+
+                topic = str(item.get("topic", "")).strip()
+                if not topic:
+                    continue
+
+                catalog_item = {
+                    "topic": topic,
+                    "year": str(year).strip(),
+                    "description": str(item.get("description") or "").strip(),
+                    "curator": str(item.get("curator") or "").strip(),
+                    "examiner": str(item.get("examiner") or "").strip(),
+                    "_normalized_topic": self._normalize_topic_name(topic),
+                }
+                catalog.append(catalog_item)
 
         return catalog
+
+    def _build_topic_lookup(
+        self, topic_catalog: Sequence[Mapping[str, Any]]
+    ) -> dict[str, Mapping[str, Any]]:
+        topic_lookup: dict[str, Mapping[str, Any]] = {}
+
+        for item in topic_catalog:
+            normalized_topic = str(item.get("_normalized_topic") or "").strip()
+            if not normalized_topic:
+                continue
+
+            current_item = topic_lookup.get(normalized_topic)
+            if current_item is None:
+                topic_lookup[normalized_topic] = item
+                continue
+
+            current_has_description = bool(current_item.get("description"))
+            new_has_description = bool(item.get("description"))
+            if not current_has_description and new_has_description:
+                topic_lookup[normalized_topic] = item
+
+        return topic_lookup
 
     def _build_topic_description_text(
         self,
@@ -423,9 +449,7 @@ class RecommendationModule:
         examiner = examiner or self._safe_text(metadata.get("examiner"))
 
         if not description:
-            description = (
-                "Описание будет добавлено позже."
-            )
+            description = "Объяснение будет добавлено позже."
 
         curator = curator or "Нет данных"
         examiner = examiner or "Нет данных"

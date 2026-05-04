@@ -9,4 +9,3 @@ RECOMMENDATION_TOPIC_LOG_FILE = LOGS_DIR / "topic_descriptions.log"
 RECOMMENDATION_MAIN_LOG_FILE = LOGS_DIR / "recommendation_main.log"
 
 TOPIC_DATA_FILE = PROJECT_DIR / "table_api" / "data" / "topic_data.json"
-TOPIC_DATA_YEAR = "2026"
