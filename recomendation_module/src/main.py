@@ -1,41 +1,41 @@
-import logging
 import sys
 
+from logger.logger import Logger
 from recomendation_module import RecommendationModule
+from recomendation_module.src.settings import RECOMMENDATION_MAIN_LOG_FILE
 from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
-from search_module.src.settings import LOG_FILE, MAX_DISTANCE
+from search_module.src.settings import MAX_DISTANCE
 from search_module.src.theme_finder_manager import ThemeFinderManager
 
 
 def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)-8s | %(message)s",
-        handlers=[logging.FileHandler(LOG_FILE, encoding="utf-8")],
-        force=True,
-    )
+    logger = Logger(str(RECOMMENDATION_MAIN_LOG_FILE), level="INFO")
 
     loader = JsonLoader()
-    saver = JsonSaver()
+    logger.info("Создан объект JsonLoader")
 
-    manager = ThemeFinderManager(
-        loader, saver, logger=logging.getLogger("ThemeFinderManager")
-    )
+    saver = JsonSaver()
+    logger.info("Создан объект JsonSaver")
+
+    manager = ThemeFinderManager(loader, saver)
+    logger.info("Инициализирован ThemeFinderManager")
 
     try:
         manager.process_data()
-
-        user_input = input(
-            "Вы хотите выбрать тему или просмотреть все подходящие темы (y/n)? "
-        ).strip()
-        need_filter = user_input.lower() == "y"
-        manager.filter_by_occupancy(need_filter)
+        logger.info("Данные получены и сохранены")
 
         manager.prepare_search()
-        recommendation_module = RecommendationModule(search_manager=manager)
+        logger.info("Поиск подготовлен")
 
-        print("Recommendation module готов. Показываю темы вместе с объяснениями.")
+        recommendation_module = RecommendationModule(search_manager=manager)
+        logger.info("Инициализирован RecommendationModule")
+
+        print(
+            "Recommendation module готов. "
+            "Ранжирование пишется в recomendation_module/logs/search_ranking.log, "
+            "описания тем пишутся в recomendation_module/logs/topic_descriptions.log."
+        )
 
         while True:
             query = input("\nВведите запрос (или 'exit'): ").strip()
@@ -45,42 +45,53 @@ def main() -> None:
                 continue
 
             try:
+                user_input = input(
+                    "Только свободные темы? (y - да, любая другая клавиша - нет): "
+                )
+                is_used = False if user_input.strip().lower() == "y" else None
+                logger.info(f"Фильтр по занятости: {is_used}")
+
+                curator_input = input(
+                    "Введите имя куратора, либо нажмите Enter: "
+                ).strip()
+                curator_input = curator_input if curator_input else None
+                logger.info(f"Фильтр по куратору: {curator_input}")
+
+                examiner_input = input(
+                    "Введите имя проверяющего, либо нажмите Enter: "
+                ).strip()
+                examiner_input = examiner_input if examiner_input else None
+                logger.info(f"Фильтр по проверяющему: {examiner_input}")
+
                 recommendations = recommendation_module.search_with_explanations(
                     query=query,
                     n_results=4,
                     max_distance=MAX_DISTANCE,
+                    is_used=is_used,
+                    curator=curator_input,
+                    examiner=examiner_input,
                 )
 
                 if not recommendations:
                     print("Ничего не найдено. Попробуйте переформулировать запрос.")
-                    logging.info(
-                        "Запрос '%s' не дал релевантных результатов (порог %s)",
-                        query,
-                        MAX_DISTANCE,
+                    logger.info(
+                        f"Запрос '{query}' не дал релевантных результатов."
                     )
                     continue
 
+                print("\nПодробные описания найденных тем:")
                 for index, recommendation in enumerate(recommendations, start=1):
-                    document = recommendation["document"]
-                    distance = recommendation["distance"]
-                    metadata = recommendation["metadata"]
-                    explanation = recommendation["explanation"]
-                    category = metadata.get("cat", "N/A") if metadata else "N/A"
-                    distance_text = (
-                        f"{distance:.3f}" if distance is not None else "N/A"
-                    )
-
-                    print(
-                        f"  {index}. '{document}' (расстояние: {distance_text}) [{category}]"
-                    )
-                    print(f"     Почему выбрана: {explanation}")
+                    print(f"\n{index}.")
+                    print(recommendation["topic_description_text"])
 
             except Exception as error:
-                logging.error("Ошибка при демонстрации recommendation_module: %s", error)
+                logger.error(
+                    f"Ошибка при демонстрации recommendation_module: {error}"
+                )
                 print("Произошла ошибка, попробуйте другой запрос.")
 
     except Exception as error:
-        logging.error("Не удалось запустить recommendation_module: %s", error)
+        logger.error(f"Не удалось запустить recommendation_module: {error}")
         print(f"Не удалось запустить recommendation_module: {error}")
         sys.exit(1)
 
