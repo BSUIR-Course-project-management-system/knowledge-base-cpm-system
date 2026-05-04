@@ -1,35 +1,28 @@
-import logging
-import sys
 import json
 import os
 from dotenv import load_dotenv
 
-from parser import GoogleSheetsParser
-from loader import ILoader, JsonLoader
-from saver import ISaver, JsonSaver
+from table_api.src.parser import GoogleSheetsParser
+from table_api.src.loader import ILoader, JsonLoader
+from table_api.src.saver import ISaver, JsonSaver
 
-LOG_FILE = "table_api/logs/google_sheets_api.log"
+from logger.logger import Logger
+
+LOG_FILE = "table_api/logs/storage.log"
 
 load_dotenv()
 
 CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE")
 FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
 GROUP_DATA_FILE = os.getenv("GROUP_DATA_FILE")
+TOPIC_DATA_FILE = os.getenv("TOPIC_DATA_FILE")
+SCHEDULE_DATA_FILE = os.getenv("SCHEDULE_DATA_FILE")
 
 if not CREDENTIALS_FILE:
     raise ValueError("ОШИБКА: Не найден CREDENTIALS_FILE в .env!")
 
 if not FOLDER_ID:
     raise ValueError("ОШИБКА: Не найден GOOGLE_DRIVE_FOLDER_ID в .env!")
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout),
-    ],
-)
 
 
 class Storage:
@@ -43,19 +36,28 @@ class Storage:
 
     def __init__(self):
         self._parser = GoogleSheetsParser(CREDENTIALS_FILE)
-        self._loader = JsonLoader()
-        self._saver = JsonSaver()
+        self._logger = Logger(LOG_FILE, level="INFO")
+        self._loader: ILoader = JsonLoader()
+        self._saver: ISaver = JsonSaver()
         self._load_all_group_data()
 
+    def update_data_from_cloud(self):
+        data = self._parser.get_all_data_from_cloud(
+            self._parser.get_all_sheets_in_folder(FOLDER_ID)
+        )
+        self._saver.save(TOPIC_DATA_FILE, data["topic_data"])
+        self._saver.save(GROUP_DATA_FILE, data["group_data"])
+        self._saver.save(SCHEDULE_DATA_FILE, data["schedule_data"])
+
     def _load_all_group_data(self) -> None:
-        logging.info("Storage запрашивает данные у парсера...")
+        self._logger.info("Storage запрашивает данные у парсера...")
         try:
             data = self._parser.fetch_all_groups(
                 self._parser.get_all_sheets_in_folder(FOLDER_ID)
             )
             self._saver.save(data=data, file_path=GROUP_DATA_FILE)
         except Exception as e:
-            logging.error(f"Ошибка при загрузке данных: {e}")
+            self._logger.error(f"Ошибка при загрузке данных: {e}")
             return
 
     def _find_first(self, data, target_key, default=None):
@@ -67,12 +69,12 @@ class Storage:
             if target_key in data:
                 return data[target_key]
             for value in data.values():
-                result = self.find_first(value, target_key, default)
+                result = self._find_first(value, target_key, default)
                 if result is not default:
                     return result
         elif isinstance(data, list):
             for item in data:
-                result = self.find_first(item, target_key, default)
+                result = self._find_first(item, target_key, default)
                 if result is not default:
                     return result
         return default
@@ -81,37 +83,54 @@ class Storage:
         unique_topics = {}
 
         data = self._loader.load(GROUP_DATA_FILE)
-        # new_data = self._loader.load("topic_data.json")
-
-        for sheet_name, records in data.items():
-            for row in records:
-                topic = row.get("topic", "").strip()
-                curator = row.get("curator", "").strip()
-                examiner = row.get("examiner", "").strip()
-                date_defence: str = self._find_first(row, "date_defence")
-                rounded_final_grade = self._find_first(row, "rounded_final_grade")
-                if topic:
-                    unique_topics[topic] = {
-                        "curator": curator,
-                        "examiner": examiner,
-                        "is_used": True,
-                        "date_defence": date_defence,
-                        "rounded_final_grade": rounded_final_grade,
-                    }
+        if data:
+            for _, records in data.items():
+                for row in records:
+                    topic = (row.get("topic", "") or "").strip()
+                    curator = (row.get("curator", "") or "").strip()
+                    examiner = (row.get("examiner", "") or "").strip()
+                    date_defence: str = self._find_first(row, "date_defence")
+                    rounded_final_grade = self._find_first(row, "rounded_final_grade")
+                    if topic:
+                        unique_topics[topic] = {
+                            "curator": curator,
+                            "examiner": examiner,
+                            "is_used": True,
+                            "date_defence": date_defence,
+                            "rounded_final_grade": rounded_final_grade,
+                        }
+        data = self._loader.load(TOPIC_DATA_FILE)
+        if data:
+            for _, records in data.items():
+                for row in records:
+                    topic = (row.get("topic", "") or "").strip()
+                    curator = (row.get("curator", "") or "").strip()
+                    examiner = (row.get("examiner", "") or "").strip()
+                    date_defence: str = self._find_first(row, "date_defence")
+                    rounded_final_grade = self._find_first(row, "rounded_final_grade")
+                    if topic not in unique_topics.keys():
+                        unique_topics[topic] = {
+                            "curator": curator,
+                            "examiner": examiner,
+                            "is_used": False,
+                            "date_defence": date_defence,
+                            "rounded_final_grade": rounded_final_grade,
+                        }
 
         formatted_topics = []
-
+        if not unique_topics:
+            return json.dumps(formatted_topics, ensure_ascii=False, indent=2)
         for idx, (topic, info) in enumerate(unique_topics.items(), start=1):
             formatted_topics.append(
                 {
                     "id": str(idx),
                     "topic": topic,
                     "description:": info.get("description", "").strip(),
-                    "is_used": info["is_used"],
-                    "curator": info["curator"],
-                    "examiner": info["examiner"],
-                    "date_defence": info["date_defence"],
-                    "rounded_final_grade": info["rounded_final_grade"],
+                    "is_used": info.get("is_used", False),
+                    "curator": info.get("curator", ""),
+                    "examiner": info.get("examiner", ""),
+                    "date_defence": info.get("date_defence", ""),
+                    "rounded_final_grade": info.get("rounded_final_grade"),
                 }
             )
 
@@ -119,7 +138,7 @@ class Storage:
 
     def get_examiner_schedule(self, examiner):
         """Заглушка"""
-        logging.info("Использование данных заглушки для графика")
+        self._logger.info("Использование данных заглушки для графика")
         mock_data = {
             "Milestone_1": [],
             "Milestone_2": [],
@@ -132,4 +151,5 @@ class Storage:
 
 if __name__ == "__main__":
     storage = Storage()
-    print(storage.get_unique_topics())
+    storage.update_data_from_cloud()
+    # print(storage.get_unique_topics())
