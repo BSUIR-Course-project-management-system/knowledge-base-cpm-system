@@ -23,6 +23,8 @@ touch table_api/.env
 
 cp table_api/.env.example table_api/.env
 
+mkdir table_api/secrets/
+
 
 echo "Система поиска успешно установлена!"
 
