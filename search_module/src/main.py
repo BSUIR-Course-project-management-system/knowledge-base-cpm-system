@@ -35,9 +35,15 @@ def main():
 
             try:
                 user_input = input(
-                    "Только свободные темы? (y - да, любая другая клавиша - нет): "
+                    "Только занятые темы? (y - да, n - нет, любая другая клавиша - нет фильтрации): "
                 )
-                is_used = not (user_input.strip().lower() == "y")
+                if (
+                    user_input.strip().lower() != "y"
+                    and user_input.strip().lower() != "n"
+                ):
+                    is_used = None
+                else:
+                    is_used = user_input.strip().lower() == "y"
 
                 curator_input = input(
                     "Введите имя куратора, либо нажмите Enter: "
@@ -51,7 +57,7 @@ def main():
 
                 search_results = manager.search_relevant(
                     query,
-                    n_results=100,
+                    n_results=10,
                     max_distance=MAX_DISTANCE,
                     is_used=is_used,
                     curator=curator,

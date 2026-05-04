@@ -12,14 +12,14 @@ class ThemeFinder:
 
     def __init__(self, data_manager: DataManager) -> None:
         """Функция инициализации"""
-        self.model = SentenceTransformer(str(PATH_TO_MODEL), device='cpu')
+        self.model = SentenceTransformer(str(PATH_TO_MODEL), device="cpu")
         self.data_manager = data_manager
         self.logger = Logger(THEME_FINDER_LOG_FILE, level="debug")
 
     def make_collection(self) -> None:
         """Функция формирования векторов поиска с очисткой и метаданными"""
         self.logger.info("Инициализация создания коллекции векторов")
-        
+
         if not self.data_manager.data:
             raise RuntimeError("Данные в DataManager пусты.")
 
@@ -44,9 +44,10 @@ class ThemeFinder:
         for item in data:
             clean_meta = {}
             for k, v in item.items():
-                if k == "topic": continue
+                if k == "topic":
+                    continue
                 clean_key = k.replace(":", "").strip()
-                
+
                 if v is None:
                     clean_meta[clean_key] = ""
                 elif isinstance(v, (str, int, float, bool)):
@@ -55,20 +56,16 @@ class ThemeFinder:
                     clean_meta[clean_key] = str(v)
             metadatas.append(clean_meta)
 
-
         self.logger.debug("Запись данных в ChromaDB")
         try:
             collection.add(
-                embeddings=embeddings, 
-                documents=texts, 
-                ids=ids, 
-                metadatas=metadatas 
+                embeddings=embeddings, documents=texts, ids=ids, metadatas=metadatas
             )
-            
+
             total_count = collection.count()
             msg = f"Коллекция векторов успешно создана. Записей в базе: {total_count}"
             self.logger.info(msg)
-            
+
         except Exception as e:
             self.logger.error(f"Ошибка при сохранении коллекции: {e}")
             raise
