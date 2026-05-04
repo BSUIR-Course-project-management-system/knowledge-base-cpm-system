@@ -33,7 +33,6 @@ class ThemeFinderManager:
         """Функция обработки данных"""
         self.logger.info("Инициализация получения тем")
         self.data_manager = DataManager(self.loader)
-        self.storage.update_data_from_cloud()
         unique_topics_json = self.storage.get_unique_topics()
         self.logger.info("Темы получены")
 
