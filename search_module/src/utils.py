@@ -17,18 +17,19 @@ class ConsoleThemePrinter(BaseThemePrinter):
 
     @staticmethod
     def print_themes(results: Dict[str, Any]) -> None:
-        """Функция вывода тем в консоли"""
-
-        docs = results["documents"][0]
-        dists = results["distances"][0]
-        metas = results["metadatas"][0]
+        docs = results.get("documents", [[]])[0]
+        dists = results.get("distances", [[]])[0]
+        metas = results.get("metadatas", [[]])[0]
 
         if not docs:
             print("Ничего не найдено. Попробуйте переформулировать запрос.")
         else:
             for i, (doc, dist, meta) in enumerate(zip(docs, dists, metas), start=1):
-                cat = meta.get("cat", "N/A") if meta else "N/A"
-                print(f"  {i}. '{doc}' (расстояние: {dist:.3f}) [{cat}]")
+                mark = meta.get("rounded_final_grade", "—")
+                date = meta.get("date_defence", "—")
+
+                print(f"  {i}. '{doc}'")
+                print(f"     (дистанция: {dist:.3f}) [Оценка: {mark}] [Дата: {date}]")
 
 
 class BaseMenuPrinter(ABC):
