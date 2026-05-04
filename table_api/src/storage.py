@@ -28,8 +28,10 @@ if not FOLDER_ID:
 class Storage:
     """
     Класс хранилища данных.
+
     Представляет собой сущность для выдачи и манипуляций данными другим модулям.
     Включает в себя парсер Google Таблиц для удаленного хранения большинства данных.
+
     .. seealso::
         :class:`GoogleSheetsParser`
     """
@@ -39,18 +41,26 @@ class Storage:
         self._logger = Logger(LOG_FILE, level="INFO")
         self._loader: ILoader = JsonLoader()
         self._saver: ISaver = JsonSaver()
-        # self._load_all_group_data()
 
     def update_data_from_cloud(self):
+        """
+        Обновление данных из облака в json файлы.
+
+        """
         self._logger.info("Storage запрашивает все данные у парсера...")
-        data = self._parser.get_all_data_from_cloud(
-            self._parser.get_all_sheets_in_folder(FOLDER_ID)
-        )
-        self._saver.save(TOPIC_DATA_FILE, data["topic_data"])
-        self._saver.save(GROUP_DATA_FILE, data["group_data"])
-        self._saver.save(SCHEDULE_DATA_FILE, data["schedule_data"])
+        try:
+            data = self._parser.get_all_data_from_cloud(
+                self._parser.get_all_sheets_in_folder(FOLDER_ID)
+            )
+            self._saver.save(TOPIC_DATA_FILE, data["topic_data"])
+            self._saver.save(GROUP_DATA_FILE, data["group_data"])
+            self._saver.save(SCHEDULE_DATA_FILE, data["schedule_data"])
+        except Exception as e:
+            raise RuntimeError(f"Непредвиденная ошибка: {e}")
+        self._logger.info("Все данные успешно обновлены!")
 
     def _load_all_group_data(self) -> None:
+
         self._logger.info("Storage запрашивает данные о группе у парсера...")
         try:
             data = self._parser.fetch_all_groups(
@@ -151,15 +161,17 @@ class Storage:
     def get_examiner_schedule(self):
         """Заглушка"""
         self._logger.info("Использование данных заглушки для графика")
-        data = self._parser.fetch_examiner_schedule(
-            self._parser.get_all_sheets_in_folder(FOLDER_ID)
-        )
+        data = self._loader.load(SCHEDULE_DATA_FILE)
+        if not data:
+            data = self._parser.fetch_examiner_schedule(
+                self._parser.get_all_sheets_in_folder(FOLDER_ID)
+            )
         json_result = json.dumps(data, ensure_ascii=False, indent=2)
 
         return json_result
 
 
-if __name__ == "__main__":
-    storage = Storage()
-    storage.update_data_from_cloud()
-    # print(storage.get_examiner_schedule())
+# if __name__ == "__main__":
+#     storage = Storage()
+#     storage.update_data_from_cloud()
+#     print(storage.get_examiner_schedule())
