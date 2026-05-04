@@ -35,3 +35,4 @@ sentence-transformers==5.4.1
 six==1.17.0
 uritemplate==4.2.0
 urllib3==2.6.3
+questionary==2.1.1
