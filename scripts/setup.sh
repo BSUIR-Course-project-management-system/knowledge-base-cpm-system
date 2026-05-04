@@ -21,7 +21,7 @@ chmod +x search_module/scripts/setup.sh
 
 touch table_api/.env
 
-table_api/.env.example > table_api/.env
+cp table_api/.env.example table_api/.env
 
 
 echo "Система поиска успешно установлена!"
