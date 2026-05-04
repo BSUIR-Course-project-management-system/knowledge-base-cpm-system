@@ -39,9 +39,10 @@ class Storage:
         self._logger = Logger(LOG_FILE, level="INFO")
         self._loader: ILoader = JsonLoader()
         self._saver: ISaver = JsonSaver()
-        self._load_all_group_data()
+        # self._load_all_group_data()
 
     def update_data_from_cloud(self):
+        self._logger.info("Storage запрашивает все данные у парсера...")
         data = self._parser.get_all_data_from_cloud(
             self._parser.get_all_sheets_in_folder(FOLDER_ID)
         )
@@ -50,12 +51,13 @@ class Storage:
         self._saver.save(SCHEDULE_DATA_FILE, data["schedule_data"])
 
     def _load_all_group_data(self) -> None:
-        self._logger.info("Storage запрашивает данные у парсера...")
+        self._logger.info("Storage запрашивает данные о группе у парсера...")
         try:
             data = self._parser.fetch_all_groups(
                 self._parser.get_all_sheets_in_folder(FOLDER_ID)
             )
             self._saver.save(data=data, file_path=GROUP_DATA_FILE)
+            self._logger.info("Storage загрузил данные о группе в файл")
         except Exception as e:
             self._logger.error(f"Ошибка при загрузке данных: {e}")
             return
@@ -89,12 +91,17 @@ class Storage:
                     topic = (row.get("topic", "") or "").strip()
                     curator = (row.get("curator", "") or "").strip()
                     examiner = (row.get("examiner", "") or "").strip()
+                    description = (
+                        row.get("description", "Описание будет добавлено позже")
+                        or "Описание будет добавлено позже"
+                    ).strip()
                     date_defence: str = self._find_first(row, "date_defence")
                     rounded_final_grade = self._find_first(row, "rounded_final_grade")
                     if topic:
                         unique_topics[topic] = {
                             "curator": curator,
                             "examiner": examiner,
+                            "description": description,
                             "is_used": True,
                             "date_defence": date_defence,
                             "rounded_final_grade": rounded_final_grade,
@@ -106,12 +113,17 @@ class Storage:
                     topic = (row.get("topic", "") or "").strip()
                     curator = (row.get("curator", "") or "").strip()
                     examiner = (row.get("examiner", "") or "").strip()
+                    description = (
+                        row.get("description", "Описание будет добавлено позже")
+                        or "Описание будет добавлено позже"
+                    ).strip()
                     date_defence: str = self._find_first(row, "date_defence")
                     rounded_final_grade = self._find_first(row, "rounded_final_grade")
                     if topic not in unique_topics.keys():
                         unique_topics[topic] = {
                             "curator": curator,
                             "examiner": examiner,
+                            "description": description,
                             "is_used": False,
                             "date_defence": date_defence,
                             "rounded_final_grade": rounded_final_grade,
@@ -134,7 +146,7 @@ class Storage:
                 }
             )
 
-        return json.dumps(formatted_topics, ensure_ascii=False, indent=2)
+        return json.dumps(formatted_topics, indent=2, ensure_ascii=False)
 
     def get_examiner_schedule(self, examiner):
         """Заглушка"""
@@ -152,4 +164,4 @@ class Storage:
 if __name__ == "__main__":
     storage = Storage()
     storage.update_data_from_cloud()
-    # print(storage.get_unique_topics())
+    storage.get_unique_topics()
