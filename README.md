@@ -17,6 +17,43 @@
 Cистема для хранения историй курсовых/дипломных проектов, тем, руководителей, требований, а также для поддержки подбора тем и контроля статуса работ.
 
 
+## Установка 
+
+* Linux/macOS
+
+Для установки системы локально на устройство, необходимо клонировать репозиторий командой 
+
+```bash
+git clone https://github.com/BSUIR-Course-project-management-system/knowledge-base-cpm-system.git
+```
+
+После клонировнаия проекта нужно перейти в корневую папку, для этого необходимо выполнить команду
+
+```bash
+cd knowledge-base-cpm-system/
+```
+
+Далее нужно запустить скрипт установки.
+
+```bash
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+```
+
+После успешной установки всех необходимых библиотек и зависимостей необходимо получить свой файл авторизации **credentials.json**  и поместить его в папку **table_api/secrets/**. Также нужно получить **id папки на google disk** и изменить его в **.env**.
+
+Далее необходимо активировать виртуальное окружение командой
+
+```bash
+source .venv/bin/activate
+```
+
+Теперь все готово к первому запуску!
+
+```bash
+python3 -m interface.main
+```
+
 ## Авторы
 
 *  GitHub: [@Artemdjdj](https://github.com/Artemdjdj), [@Frostnout](https://github.com/dBurbas), [@Aratakrr1](https://github.com/suyeatolog), [@Gen1us02](https://github.com/Gen1us02)

@@ -13,7 +13,7 @@ echo "Установка необходимых библиотек"
 pip install -r requirements.txt
 echo "Все необходимые библиотеки установлены"
 
-echo "Установка ситемы поиска"
+echo "Установка системы поиска"
 
 python3 -c "
 from sentence_transformers import SentenceTransformer
