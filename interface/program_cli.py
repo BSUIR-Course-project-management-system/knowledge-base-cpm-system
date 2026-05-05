@@ -108,8 +108,8 @@ class ProgramCLI(cmd.Cmd):
         :param arg: Команда для которой нужно получить помощь.
         :type arg: str
         """
-        # if arg:
-        #     return super().do_help(arg)
+        if arg:
+            return super().do_help(arg)
 
         # super().do_help(arg)
 
