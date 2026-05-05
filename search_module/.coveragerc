@@ -1,6 +1,7 @@
 [run]
 omit =
     search_module/src/main.py
+    recomendation_module/src/main.py
     search_module/src/utils.py
     **/tests/*
     **/__init__.py
