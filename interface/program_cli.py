@@ -2,7 +2,7 @@ import cmd
 from rich.console import Console
 from rich.table import Table
 from typing import TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, timedelta
 import questionary
 import sys
 from recomendation_module import RecommendationModule
@@ -10,6 +10,10 @@ from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
 from search_module.src.settings import MAX_DISTANCE
 from search_module.src.theme_finder_manager import ThemeFinderManager
+from schedule_module.src.config_parser import YamlParser
+from schedule_module.src.date_checker import DateChecker
+from schedule_module.src.datetime_parser import DatetimeParser
+from schedule_module.src.schedule_generator import SheduleGenerator
 import json
 
 if TYPE_CHECKING:
@@ -45,7 +49,9 @@ class ProgramCLI(cmd.Cmd):
         self._is_relevant = False
         self._manager = None
         self._recomendation_module = None
-
+        config_parser = YamlParser()
+        dc = DateChecker()
+        self._schedule_generator = SheduleGenerator(config_parser, dc)
         super().__init__()
 
     def _init_recommendation_module(self) -> bool:
@@ -67,6 +73,7 @@ class ProgramCLI(cmd.Cmd):
                 self._recomendation_module = RecommendationModule(
                     search_manager=self._manager
                 )
+
             console.print("[bold green] Модуль успешно загружен![/]")
             return True
         except Exception as e:
@@ -381,7 +388,77 @@ class ProgramCLI(cmd.Cmd):
 
         :param arg: Не используется.
         """
-        pass
+
+        console.rule("Планирование опроцентовок", characters="=", style="blue")
+        try:
+            project_name = questionary.text("Название проекта: ").ask()
+            reviewer_name = questionary.text("Имя проверяющего: ").ask()
+            start_date_str = questionary.text("Дата принятия темы (YYYY-MM-DD): ").ask()
+            if not DateChecker.is_correct_format(start_date_str):
+                console.print("[yellow] Неверный формат даты")
+                return
+            end_date_str = questionary.text(
+                "Конечная дата (защита) (YYYY-MM-DD): "
+            ).ask()
+            if not DateChecker.is_correct_format(start_date_str):
+                console.print("[yellow] Неверный формат даты")
+                return
+
+            duration_minutes = questionary.text(
+                "Введите продолжительность опроцентовки:",
+                validate=lambda text: (
+                    (text.isdigit() and int(text) > 1 and int(text) <= 120)
+                    or "Пожалуйста введите число (от 1 до 120)"
+                ),
+                default="30",
+            ).ask()
+            if duration_minutes is not None:
+                duration_minutes = int(duration_minutes)
+
+            start_dt = datetime.strptime(start_date_str, "%Y-%m-%d").replace(
+                hour=self._schedule_generator.WORK_START_HOUR, minute=0
+            )
+            end_dt = datetime.strptime(end_date_str, "%Y-%m-%d").replace(
+                hour=self._schedule_generator.WORK_END_HOUR, minute=0
+            )
+
+            if end_dt <= start_dt:
+                console.print(
+                    "[red] Ошибка: конечная дата должна быть позже начальной."
+                )
+                return
+
+            data = json.loads(self._table_module.get_examiner_schedule(reviewer_name))
+            occupied_intervals = DatetimeParser.parse_from_json(data)
+
+            candidates = self._schedule_generator.generate_candidate_starts(
+                start_dt, end_dt, duration_minutes, occupied_intervals
+            )
+
+            best = self._schedule_generator.select_slots(
+                candidates, start_dt, end_dt, num_points=3
+            )
+
+            if best is None:
+                console.print(
+                    "[yellow] Не удалось найти три свободных интервала для опроцентовок."
+                )
+                return
+
+            console.rule("Результат", characters="=", style="blue")
+            console.print(f"Проект: {project_name}")
+            console.print(f"Проверяющий: {reviewer_name}")
+            for i, start in enumerate(best, start=1):
+                end = start + timedelta(minutes=duration_minutes)
+                console.print(
+                    f"  Опроцентовка {i}: {start.strftime('%Y-%m-%d %H:%M')} – {end.strftime('%H:%M')}"
+                )
+        except KeyboardInterrupt:
+            console.print(
+                "\n[bold yellow] Генерация опроцентовок прервана пользователем.[/]"
+            )
+        except Exception as e:
+            console.print(f"[bold red] Ошибка в процессе генерации расписания: {e}[/]")
 
     def do_update_information(self, arg):
         """Обновить данные из облака.
