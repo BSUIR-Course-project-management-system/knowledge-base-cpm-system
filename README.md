@@ -17,17 +17,6 @@
 Cистема для хранения историй курсовых/дипломных проектов, тем, руководителей, требований, а также для поддержки подбора тем и контроля статуса работ.
 
 
-## Технологии:
-
-* Python
-* Pytest
-* chromadb
-* sentence-transformers
-* google-api-python-client
-* gspread
-* pandas 
-
-
 ## Авторы
 
 *  GitHub: [@Artemdjdj](https://github.com/Artemdjdj), [@Frostnout](https://github.com/dBurbas), [@Aratakrr1](https://github.com/suyeatolog), [@Gen1us02](https://github.com/Gen1us02)

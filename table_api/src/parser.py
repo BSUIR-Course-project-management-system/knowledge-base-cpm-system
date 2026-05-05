@@ -88,8 +88,7 @@ class GoogleSheetsParser:
 
         except Exception as e:
             self._logger.error(
-                f"Критическая ошибка при поиске файлов на Google Диске: {e}",
-                exc_info=True,
+                f"Критическая ошибка при поиске файлов на Google Диске: {e}"
             )
 
         self._logger.info(
