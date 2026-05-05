@@ -23,6 +23,14 @@ class DatetimeParser:
     
     @staticmethod
     def parse_from_json(data: Dict[str, Any]) -> List[Tuple[datetime, datetime]]:
+        """Метод для преобразования json данных от API в datetime объекты
+
+        Args:
+            data (Dict[str, Any]): Данные из Google таблиц по проверяющему
+
+        Returns:
+            List[Tuple[datetime, datetime]]: Временные рамки занятых дней под опроцентовки
+        """
         occupied_data_list = []
         for key, value in data.items():
             if key.startswith("milestone_"):
