@@ -5,6 +5,8 @@ from sentence_transformers import SentenceTransformer
 from logger.logger import Logger
 from search_module.src.data_manager import DataManager
 from search_module.src.settings import PATH_TO_MODEL, THEME_FINDER_LOG_FILE
+from rapidfuzz import fuzz
+import torch
 
 
 class ThemeFinder:
@@ -12,7 +14,16 @@ class ThemeFinder:
 
     def __init__(self, data_manager: DataManager) -> None:
         """Функция инициализации"""
-        self.model = SentenceTransformer(str(PATH_TO_MODEL), device="cpu")
+        if torch.backends.mps.is_available():
+            device = "mps"  # Для MacBook
+        elif torch.cuda.is_available():
+            device = "cuda"  # Для компьютеров с видеокартами NVIDIA
+        else:
+            device = "cpu"
+
+        self.model = SentenceTransformer(
+            "paraphrase-multilingual-MiniLM-L12-v2", device=device
+        )
         self.data_manager = data_manager
         self.logger = Logger(THEME_FINDER_LOG_FILE, level="debug")
 
@@ -38,7 +49,9 @@ class ThemeFinder:
         ids = [str(item.get("id", i)) for i, item in enumerate(data)]
 
         self.logger.debug(f"Кодирование векторов для {len(texts)} записей")
-        embeddings = self.model.encode(texts, show_progress_bar=True).tolist()
+        embeddings = self.model.encode(
+            texts, show_progress_bar=True, normalize_embeddings=True
+        ).tolist()
 
         metadatas = []
         for item in data:
@@ -70,6 +83,27 @@ class ThemeFinder:
             self.logger.error(f"Ошибка при сохранении коллекции: {e}")
             raise
 
+        def _calculate_hybrid_score(
+            self, query: str, document: str, vector_distance: float
+        ) -> float:
+            """
+            Вспомогательная функция для расчета гибридной оценки.
+            """
+            # Формула перевода L2-расстояния нормализованных векторов в косинусное сходство (от -1.0 до 1.0)
+            cosine_sim = 1.0 - (vector_distance / 2.0)
+
+            # Ограничиваем нижний порог нулем (оценка от 0.0 до 1.0)
+            semantic_score = max(0.0, cosine_sim)
+
+            # Лексическое сходство с помощью RapidFuzz (от 0 до 1)
+            lexical_score = (
+                fuzz.token_sort_ratio(query.lower(), document.lower()) / 100.0
+            )
+
+            # Усредняем с весами 50/50
+            hybrid_score = (semantic_score * 0.5) + (lexical_score * 0.5)
+            return hybrid_score
+
     def search(
         self,
         query: str,
@@ -80,7 +114,9 @@ class ThemeFinder:
     ) -> Any:
         """Функция векторного поиска"""
         self.logger.info(f"Поиск по запросу: {query}")
-        query_emb = self.model.encode([query], show_progress_bar=False).tolist()
+        query_emb = self.model.encode(
+            [query], show_progress_bar=False, normalize_embeddings=True
+        ).tolist()
 
         conditions = []
 
@@ -107,4 +143,5 @@ class ThemeFinder:
         )
 
         self.logger.info("Поиск окончен")
+        print(results)
         return results

@@ -7,4 +7,4 @@ PATH_TO_CHROMA_DB = BASE_DIR / "chroma_db"
 MAIN_LOG_FILE = BASE_DIR / "logs" / "search_module_main.log"
 THEME_FINDER_LOG_FILE = BASE_DIR / "logs" / "theme_finder.log"
 THEME_FINDER_MANAGER_LOG_FILE = BASE_DIR / "logs" / "theme_finder_manager.log"
-MAX_DISTANCE = 0.75
+MAX_DISTANCE = 0.85
