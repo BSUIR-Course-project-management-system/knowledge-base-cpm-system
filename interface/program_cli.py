@@ -1,6 +1,5 @@
 import cmd
 from rich.console import Console
-from rich.table import Table
 from typing import TYPE_CHECKING
 from datetime import datetime, timedelta
 import questionary
@@ -137,7 +136,7 @@ class ProgramCLI(cmd.Cmd):
         console.print(
             "- [green]schedule_generate[/] — сгенерировать расписание приема опроцентовок для преподавателя(проверяющего)"
         )
-        console.print("- [green]list_topics[/]   — добавить тему в облако")
+        console.print("- [green]list_topics[/]   — вывести список тем")
         console.print("- [green]add_topic[/]   — добавить тему в облако")
         console.print("- [green]remove_topic[/]   — удалить тему из облака")
         console.print("- [green]exit[/]  — выйти из программы\n")
@@ -177,7 +176,8 @@ class ProgramCLI(cmd.Cmd):
                 choices=["По возрастанию", "По убыванию"],
                 instruction="Используйте стрелочки(↑↓) — выбор, Enter — подтвердить",
             ).ask()
-
+        else:
+            reverse_choice = ""
         topics: list = json.loads(self._table_module.get_unique_topics())
 
         sort_reversed: bool = "По убыванию" in reverse_choice
@@ -314,6 +314,8 @@ class ProgramCLI(cmd.Cmd):
                 query = query.strip()
                 if not query:
                     console.print("[yellow]Запрос не может быть пустым.[/]")
+                    if not questionary.confirm("Продолжить поиск?", default=True).ask():
+                        break
                     continue
 
                 occupation_choices = questionary.checkbox(
