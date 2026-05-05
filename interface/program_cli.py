@@ -4,8 +4,7 @@ from rich.table import Table
 from typing import TYPE_CHECKING
 import time
 import questionary
-import readline
-
+import sys
 from recomendation_module import RecommendationModule
 from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
@@ -17,11 +16,18 @@ if TYPE_CHECKING:
 
 console = Console()
 
-# Auto-complete commands for Mac/Linux
-if readline.__doc__ and "libedit" in readline.__doc__:
-    readline.parse_and_bind("bind ^I rl_complete")
-else:
-    readline.parse_and_bind("tab: complete")
+if sys.platform != "win32":
+    try:
+        import readline
+        import rlcompleter
+
+        # macOS по умолчанию использует libedit, а не GNU readline
+        if readline.__doc__ and "libedit" in readline.__doc__:
+            readline.parse_and_bind("bind ^I rl_complete")
+        else:
+            readline.parse_and_bind("tab: complete")
+    except ImportError:
+        pass
 
 
 class ProgramCLI(cmd.Cmd):
@@ -69,17 +75,17 @@ class ProgramCLI(cmd.Cmd):
     def preloop(self):
         """Вывод ASCII-арта логотипа и подсказка для быстрого-старта перед входом в командный цикл."""
         console.clear()
+        console.rule(style="blue")
         console.print(r"""[bold dodger_blue1]
-------------------------------------------------------------------------
                       
                   /wl               
-               ./# ##l    _     _      ██╗   ███╗ ██╗   ███╗ ██████████║
-             _/╝    ##   /#l   /#l     ██║  ████║ ██║  ████║     ██╔═══╝
-           ./╝      ## // ## // ##     ██║ ██╔██║ ██║ ██╔██║     ██║
-         ./╝ .•#l   ##/   ##/   ##     ██╚██╔╝██║ ██╚██╔╝██║     ██║
-       ./╝     ##   ##  _/##    ##     ████╔╝ ██║ ████╔╝ ██║     ██║
-     ./╝       ## /•##_// ##╔.  ##╔.   ███╔╝  ██║ ███╔╝  ██║     ██║
-    |╝         l#/  ld/╝  l#╝   l#╝    ╚══╝   ╚═╝ ╚══╝   ╚═╝     ╚═╝
+               ./$ $$l    _     _      ██╗   ███╗ ██╗   ███╗ ██████████╗
+             _/╝    $$   /$l   /$l     ██║  ████║ ██║  ████║  ╚══██╔═══╝
+           ./╝      $$ // $$ // $$     ██║ ██╔██║ ██║ ██╔██║     ██║
+         ./╝ .•$l   $$/   $$/   $$     ██╚██╔╝██║ ██╚██╔╝██║     ██║
+       ./╝     $$   $$  _/$$    $$     ████╔╝ ██║ ████╔╝ ██║     ██║
+     ./╝       $$ /•$$_// $$╔.  $$╔.   ███╔╝  ██║ ███╔╝  ██║     ██║
+    |╝         l$/  ld/╝  l$╝   l$╝    ╚══╝   ╚═╝ ╚══╝   ╚═╝     ╚═╝
                       
     [/bold dodger_blue1]
         """)
@@ -87,6 +93,7 @@ class ProgramCLI(cmd.Cmd):
             "[bold dodger_blue1]✿ Система поддержки управления курсовыми и дипломными проектами кафедры ✿[/bold dodger_blue1]\n",
             style="frame",
         )
+        console.rule(style="blue")
         console.print(
             "? Напишите [dodger_blue1]help[/] или [dodger_blue1]?[/] для списка команд.\n"
         )
@@ -123,6 +130,51 @@ class ProgramCLI(cmd.Cmd):
             "- [green]update_information[/]   — получить актуальную информацию из облака"
         )
         console.print("- [green]exit[/]  — выйти из программы\n")
+
+    def do_add_topic(self, arg):
+        is_success = False
+        try:
+            title = questionary.text(
+                "Введите название таблицы или год:", default="ТЕСТ 2026"
+            ).ask()
+            if title is None or title.strip().lower() == "exit":
+                return
+            topic = questionary.text("Введите название темы:").ask()
+            if topic is None or topic.strip().lower() == "exit":
+                return
+            description = questionary.text(
+                "Введите описание темы (необязательно):", default=""
+            ).ask()
+            if description is None or description.strip().lower() == "exit":
+                return
+            curator = questionary.text(
+                "Введите куратора (необязательно):", default=""
+            ).ask()
+            if curator is None or curator.strip().lower() == "exit":
+                return
+            examiner = questionary.text(
+                "Введите проверяющего (необязательно):", default=""
+            ).ask()
+            if curator is None or curator.strip().lower() == "exit":
+                return
+
+            with console.status("[bold green]Добавление темы...", spinner="toggle9"):
+                self._table_module.add_topic(
+                    key_title=title,
+                    topic=topic,
+                    description=description,
+                    curator=curator,
+                    examiner=examiner,
+                )
+            is_success = True
+
+        except KeyboardInterrupt:
+            console.print("\n[bold yellow] Добавление прервано пользователем.[/]")
+            return
+        except Exception as e:
+            console.print(f"[bold red] Ошибка в процессе добавления: {e}[/]")
+        if is_success:
+            console.print("[bold green]Успешное добавление!")
 
     def do_recommend(self, arg):
         if not self._recomendation_module:
