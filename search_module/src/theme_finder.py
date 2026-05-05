@@ -21,9 +21,7 @@ class ThemeFinder:
         else:
             device = "cpu"
 
-        self.model = SentenceTransformer(
-            "paraphrase-multilingual-MiniLM-L12-v2", device=device
-        )
+        self.model = SentenceTransformer("BAAI/bge-m3", device=device)
         self.data_manager = data_manager
         self.logger = Logger(THEME_FINDER_LOG_FILE, level="debug")
 
@@ -143,5 +141,4 @@ class ThemeFinder:
         )
 
         self.logger.info("Поиск окончен")
-        print(results)
         return results

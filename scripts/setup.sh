@@ -13,19 +13,6 @@ echo "Установка необходимых библиотек"
 pip install -r requirements.txt
 echo "Все необходимые библиотеки установлены"
 
-echo "Установка системы поиска"
-
-python3 -c "
-from sentence_transformers import SentenceTransformer
-import os
-path = 'search_module/models/all-MiniLM-L6-v2'
-os.makedirs(path, exist_ok=True)
-print('Скачивание весов')
-model = SentenceTransformer('all-MiniLM-L6-v2')
-model.save(path)
-print('Модель сохранена в ' + path)
-"
-
 touch table_api/.env
 
 cp table_api/.env.example table_api/.env
