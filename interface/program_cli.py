@@ -2,7 +2,7 @@ import cmd
 from rich.console import Console
 from rich.table import Table
 from typing import TYPE_CHECKING
-import time
+from datetime import datetime
 import questionary
 import sys
 from recomendation_module import RecommendationModule
@@ -10,6 +10,7 @@ from search_module.src.loader import JsonLoader
 from search_module.src.saver import JsonSaver
 from search_module.src.settings import MAX_DISTANCE
 from search_module.src.theme_finder_manager import ThemeFinderManager
+import json
 
 if TYPE_CHECKING:
     from table_api.src.storage import Storage
@@ -47,7 +48,7 @@ class ProgramCLI(cmd.Cmd):
 
         super().__init__()
 
-    def _init_recommendation_backend(self) -> bool:
+    def _init_recommendation_module(self) -> bool:
         """Ленивая инициализация модуля рекомендаций и поиска.
         Выполняется однократно или после обновления данных из облака.
         """
@@ -122,16 +123,126 @@ class ProgramCLI(cmd.Cmd):
 
         console.print()
         console.print("[bold cyan]Быстрый старт:[/bold cyan]")
+        console.print(
+            "- [green]update_information[/]   — получить актуальную информацию из облака"
+        )
         console.print("- [green]recommend[/]   — рекомендация темы проекта")
         console.print(
             "- [green]schedule_generate[/] — сгенерировать расписание приема опроцентовок для преподавателя(проверяющего)"
         )
-        console.print(
-            "- [green]update_information[/]   — получить актуальную информацию из облака"
-        )
+        console.print("- [green]list_topics[/]   — добавить тему в облако")
+        console.print("- [green]add_topic[/]   — добавить тему в облако")
+        console.print("- [green]remove_topic[/]   — удалить тему из облака")
         console.print("- [green]exit[/]  — выйти из программы\n")
 
+    def _print_topic(self, topic: dict):
+        """Вывод информации темы из словаря ``topic``.
+
+        :param topic: Словарь с данными о теме.
+        """
+        console.print(f"ID: {topic.get('id', 'ID')}")
+        console.print(f"Название: {topic.get('topic', 'Неизвестная тема')}")
+        console.print(f"Описание: {topic.get('description', 'Нет описания')}")
+        console.print(
+            f"Занята: {'Да' if topic.get('is_used', 'Не указано') else 'Нет'}"
+        )
+        console.print(f"Куратор: {topic.get('curator', 'Не указан')}")
+        console.print(f"Проверяющий: {topic.get('examiner', 'Не указан')}")
+        console.print(f"Дата: {topic.get('date_defence', '??.??.????')}")
+        console.print(f"Оценка: {topic.get('rounded_final_grade', 'Нет оценки')}")
+
+    def do_list_topics(self, arg):
+        """Получить список тем с возможной сортировкой.
+
+        :param arg: Не используется.
+        """
+        sort_choices = questionary.select(
+            "Выберите тип сортировки тем:",
+            choices=["По баллу", "По дате", "Нет сортировки"],
+            instruction="Используйте стрелочки(↑↓) — выбор, Enter — подтвердить",
+        ).ask()
+
+        if sort_choices is None:
+            return
+        if "Нет сортировки" not in sort_choices:
+            reverse_choice = questionary.select(
+                "Выберите тип сортировки тем:",
+                choices=["По возрастанию", "По убыванию"],
+                instruction="Используйте стрелочки(↑↓) — выбор, Enter — подтвердить",
+            ).ask()
+
+        topics: list = json.loads(self._table_module.get_unique_topics())
+
+        sort_reversed: bool = "По убыванию" in reverse_choice
+
+        def safe_grade_key(x):
+            g = x.get("rounded_final_grade", 0)
+            if g is None:
+                return 0
+            try:
+                return int(g)
+            except (ValueError, TypeError):
+                return 0
+
+        def safe_date_key(x):
+            d = x.get("date_defence")
+            if d is None:
+                return datetime(1900, 1, 1)
+            try:
+                return datetime.strptime(str(d), "%d.%m.%Y")
+            except (ValueError, TypeError):
+                return datetime(1900, 1, 1)
+
+        if "Нет сортировки" in sort_choices:
+            pass
+        elif "По баллу" in sort_choices:
+            topics.sort(key=safe_grade_key, reverse=sort_reversed)
+        elif "По дате" in sort_choices:
+            topics.sort(key=safe_date_key, reverse=sort_reversed)
+        else:
+            console.print("Неизвестный выбор. Выбор по-умолчанию: нет сортировки")
+        console.rule("Темы", style="blue", characters="=")
+        for i, topic in enumerate(topics):
+            console.rule(f"Тема № {i + 1}", style="blue")
+            self._print_topic(topic)
+
+    def do_remove_topic(self, arg):
+        """Удалить тему из Google Sheets хранящимся в облаке.
+
+        :param arg: Не используется.
+        """
+        is_success = False
+        try:
+            title = questionary.text(
+                "Введите название таблицы или год:", default="ТЕСТ 2026"
+            ).ask()
+            if title is None or title.strip().lower() == "exit":
+                return
+            topic = questionary.text("Введите название темы:").ask()
+            if topic is None or topic.strip().lower() == "exit":
+                return
+
+            with console.status("[bold green]Удаление темы...", spinner="toggle7"):
+                self._table_module.remove_topic(
+                    key_title=title,
+                    topic=topic,
+                )
+            is_success = True
+            self._is_relevant = False
+
+        except KeyboardInterrupt:
+            console.print("\n[bold yellow] Удаление прервано пользователем.[/]")
+            return
+        except Exception as e:
+            console.print(f"[bold red] Ошибка в процессе удаления: {e}[/]")
+        if is_success:
+            console.print("[bold green]Успешное удаление!")
+
     def do_add_topic(self, arg):
+        """Добавить новую тему в Google Sheets хранящимся в облаке.
+
+        :param arg: Не используется.
+        """
         is_success = False
         try:
             title = questionary.text(
@@ -167,6 +278,7 @@ class ProgramCLI(cmd.Cmd):
                     examiner=examiner,
                 )
             is_success = True
+            self._is_relevant = False
 
         except KeyboardInterrupt:
             console.print("\n[bold yellow] Добавление прервано пользователем.[/]")
@@ -177,8 +289,12 @@ class ProgramCLI(cmd.Cmd):
             console.print("[bold green]Успешное добавление!")
 
     def do_recommend(self, arg):
+        """Поиск рекомендаций по теме по запросу.
+
+        :param arg: Не используется.
+        """
         if not self._recomendation_module:
-            self._init_recommendation_backend()
+            self._init_recommendation_module()
 
         console.print(
             "[bold cyan] Режим рекомендаций. Нажмите Ctrl+C или введите 'exit' для выхода.[/]"
@@ -261,9 +377,17 @@ class ProgramCLI(cmd.Cmd):
                 console.print(f"[bold red] Ошибка в процессе поиска: {e}[/]")
 
     def do_schedule_generate(self, arg):
+        """Генерировать расписание приёма опроцентовок для преподавателя(проверяющего).
+
+        :param arg: Не используется.
+        """
         pass
 
     def do_update_information(self, arg):
+        """Обновить данные из облака.
+
+        :param arg: Не используется.
+        """
         if self._is_relevant:
             console.print("[bold green]Данные уже актуальны.")
             return
