@@ -1,5 +1,8 @@
 [run]
 omit =
+    schedule_module/src/main.py
+    schedule_module/src/utils.py
+    schedule_module/src/logger.py
     search_module/src/main.py
     recomendation_module/src/main.py
     search_module/src/utils.py
