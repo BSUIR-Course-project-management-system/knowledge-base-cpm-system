@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from table_api.src.parser import GoogleSheetsParser
 from table_api.src.loader import ILoader, JsonLoader
 from table_api.src.saver import ISaver, JsonSaver
-
+from table_api.src.topic_matcher import TopicMatcher
 from logger.logger import Logger
 
 LOG_FILE = "table_api/logs/storage.log"
@@ -41,6 +41,9 @@ class Storage:
         self._logger = Logger(LOG_FILE, level="INFO")
         self._loader: ILoader = JsonLoader()
         self._saver: ISaver = JsonSaver()
+        self._topic_matcher: TopicMatcher = TopicMatcher(
+            "search_module/models/all-MiniLM-L6-v2"
+        )
 
     def update_data_from_cloud(self):
         """
@@ -130,6 +133,9 @@ class Storage:
                     date_defence: str = self._find_first(row, "date_defence")
                     rounded_final_grade = self._find_first(row, "rounded_final_grade")
                     if topic not in unique_topics.keys():
+                        # if not self._topic_matcher.is_topic_in_list(
+                        #     topic, list(unique_topics.keys())
+                        # ):
                         unique_topics[topic] = {
                             "curator": curator,
                             "examiner": examiner,
@@ -158,7 +164,7 @@ class Storage:
 
         return json.dumps(formatted_topics, indent=2, ensure_ascii=False)
 
-    def get_examiner_schedule(self):
+    def get_examiner_schedule(self, examiner: str, year: int = 2026):
         """Заглушка"""
         self._logger.info("Использование данных заглушки для графика")
         data = self._loader.load(SCHEDULE_DATA_FILE)
@@ -166,12 +172,27 @@ class Storage:
             data = self._parser.fetch_examiner_schedule(
                 self._parser.get_all_sheets_in_folder(FOLDER_ID)
             )
-        json_result = json.dumps(data, ensure_ascii=False, indent=2)
+        data: dict = data.get(str(year), {})
+        examiner_data: dict[list] = {
+            "milestone_1": [],
+            "milestone_2": [],
+            "milestone_3": [],
+        }
+        for milestone, topics in data.items():
+            for topic in topics:
+                if (
+                    examiner.lower().strip()
+                    in topic.get("examiner", "").lower().strip()
+                ):
+                    examiner_data[milestone].append(topic)
 
-        return json_result
+        return json.dumps(examiner_data, ensure_ascii=False, indent=2)
+
+        # return json_result
 
 
-# if __name__ == "__main__":
-#     storage = Storage()
-#     storage.update_data_from_cloud()
-#     print(storage.get_examiner_schedule())
+if __name__ == "__main__":
+    storage = Storage()
+    storage.update_data_from_cloud()
+    print(storage.get_unique_topics())
+    # print(storage.get_examiner_schedule("грак"))
