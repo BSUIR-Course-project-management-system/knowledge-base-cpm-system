@@ -557,7 +557,10 @@ class GoogleSheetsParser:
                         continue
                     year_of_topics = re.search(r"\d{4}", sheet.title)
                     key = year_of_topics.group() if year_of_topics else "default"
-                    topic_data[key] = topic_worksheet
+                    if key not in topic_data:
+                        topic_data[key] = topic_worksheet
+                    else:
+                        topic_data[key].extend(topic_worksheet)
 
                 elif self._normalize("график опроцентов") in self._normalize(
                     sheet_name
