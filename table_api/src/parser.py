@@ -626,3 +626,86 @@ class GoogleSheetsParser:
 
             self._logger.info(f"Успешный парсинг документа {sheet.title}")
         return all_data
+
+    def append_row_with_format(
+        self,
+        *,
+        spreadsheets_ids: list[str],
+        key_title: str,
+        worksheet_title: str,
+        row_data: list,
+    ):
+        """
+        Добавляет новую строку в конец листа с сохранением форматирования (USER_ENTERED).
+
+        :param spreadsheet: Название или ID Google Таблицы
+        :param worksheet_title: Название листа (например, "Лист1" или "Курсовые")
+        :param row_data: Список данных для вставки (например, ["Бурбас", "Система ИИ", 2026])
+        """
+        spreadsheet_id = ""
+        for spreadsheet in spreadsheets_ids:
+            doc = self._gserv_acc.open_by_key(spreadsheet)
+            if self._normalize(key_title) in self._normalize(doc.title):
+                spreadsheet_id = spreadsheet
+                break
+        try:
+            try:
+                doc = self._gserv_acc.open_by_key(spreadsheet_id)
+            except Exception:
+                doc = self._gserv_acc.open(spreadsheet_id)
+
+            worksheet = doc.worksheet(worksheet_title)
+
+            worksheet.append_row(
+                row_data,
+                value_input_option="USER_ENTERED",
+                insert_data_option="INSERT_ROWS",
+            )
+
+        except Exception as e:
+            raise Exception(f"Ошибка при добавлении строки в таблицу: {e}")
+
+    def delete_row_by_topic(
+        self,
+        *,
+        spreadsheets_ids: list[str],
+        key_title: str,
+        worksheet_title: str,
+        theme_title: str,
+        column_index: int = 1,
+    ) -> bool:
+        """
+        Ищет строку, содержащую указанную тему, и удаляет её.
+
+        :param theme_title: Название темы для поиска.
+        :param column_index: Номер колонки, в которой находится тема (по умолчанию 1).
+        :return: True, если строка найдена и удалена, иначе False.
+        """
+        spreadsheet_id = ""
+        for spreadsheet in spreadsheets_ids:
+            doc = self._gserv_acc.open_by_key(spreadsheet)
+            if self._normalize(key_title) in self._normalize(doc.title):
+                spreadsheet_id = spreadsheet
+                break
+
+        try:
+            try:
+                doc = self._gserv_acc.open_by_key(spreadsheet_id)
+            except Exception:
+                doc = self._gserv_acc.open(spreadsheet_id)
+
+            worksheet = doc.worksheet(worksheet_title)
+
+            try:
+                cell = worksheet.find(theme_title, in_column=column_index)
+            except Exception:
+                print(f"Тема '{theme_title}' не найдена.")
+                return False
+
+            worksheet.delete_rows(cell.row)
+            print(f"Удалена строка {cell.row} с темой '{theme_title}'")
+            return True
+
+        except Exception as e:
+            print(f"Ошибка при удалении строки: {e}")
+            return False
