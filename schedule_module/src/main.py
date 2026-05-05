@@ -5,7 +5,7 @@ from .schedule_generator import SheduleGenerator
 from table_api.src.storage import Storage
 from .date_checker import DateChecker
 from .logger import logger, LOG_FILE
-from .utills import clear_logs
+from .utils import clear_logs
 import json
 
 

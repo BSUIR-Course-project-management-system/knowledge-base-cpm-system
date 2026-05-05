@@ -20,7 +20,7 @@ class DatetimeParser:
         """
         logger.info(f"Парсинг даты из строки {dt_str}")
         return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-    
+
     @staticmethod
     def parse_from_json(data: Dict[str, Any]) -> List[Tuple[datetime, datetime]]:
         """Метод для преобразования json данных от API в datetime объекты
