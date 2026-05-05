@@ -153,7 +153,7 @@ class Storage:
                 {
                     "id": str(idx),
                     "topic": topic,
-                    "description:": info.get("description", "").strip(),
+                    "description": info.get("description", "").strip(),
                     "is_used": info.get("is_used", False),
                     "curator": info.get("curator", ""),
                     "examiner": info.get("examiner", ""),
