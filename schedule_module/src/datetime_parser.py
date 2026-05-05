@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Dict, Any, List, Tuple
 from .logger import logger
 
 
@@ -19,3 +20,27 @@ class DatetimeParser:
         """
         logger.info(f"Парсинг даты из строки {dt_str}")
         return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+    
+    @staticmethod
+    def parse_from_json(data: Dict[str, Any]) -> List[Tuple[datetime, datetime]]:
+        occupied_data_list = []
+        for key, value in data.items():
+            if key.startswith("milestone_"):
+                occupied_data_list.extend(value)
+
+        date_format = "%d.%m.%Y %H:%M"
+        result = []
+
+        for day in occupied_data_list:
+            date = day["day"]
+            start_time = day["time"].get("start")
+            end_time = day["time"].get("end")
+
+            if not start_time or not end_time:
+                continue
+
+            start_datetime = datetime.strptime(f"{date} {start_time}", date_format)
+            end_datetime = datetime.strptime(f"{date} {end_time}", date_format)
+            result.append((start_datetime, end_datetime))
+
+        return result

@@ -51,12 +51,7 @@ def main():
         return
 
     data = json.loads(storage.get_examiner_schedule(reviewer_name))
-    occupied_dict_list = data["Milestone_1"] + data["Milestone_2"] + data["Milestone_3"]
-    occupied_intervals = []
-    for item in occupied_dict_list:
-        occ_start = DatetimeParser.parse_iso(item["start"])
-        occ_end = DatetimeParser.parse_iso(item["end"])
-        occupied_intervals.append((occ_start, occ_end))
+    occupied_intervals = DatetimeParser.parse_from_json(data)
 
     candidates = sg.generate_candidate_starts(
         start_dt, end_dt, duration_minutes, occupied_intervals
