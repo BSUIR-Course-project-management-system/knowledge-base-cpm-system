@@ -105,7 +105,7 @@ class ThemeFinder:
     def search(
         self,
         query: str,
-        n_results: int = 4,
+        n_results: int = 7,
         is_used: Optional[bool] = None,
         curator: Optional[str] = None,
         examiner: Optional[str] = None,

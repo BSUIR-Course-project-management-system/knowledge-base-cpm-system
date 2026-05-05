@@ -167,7 +167,7 @@ class ThemeFinderManager:
     def search_relevant(
         self,
         query: str,
-        n_results: int = 4,
+        n_results: int = 7,
         max_distance: float = MAX_DISTANCE,
         is_used: bool = False,
         curator: Optional[str] = None,
