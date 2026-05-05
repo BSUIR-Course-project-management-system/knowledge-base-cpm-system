@@ -188,7 +188,40 @@ class Storage:
 
         return json.dumps(examiner_data, ensure_ascii=False, indent=2)
 
-        # return json_result
+    def add_topic(
+        self,
+        *,
+        key_title: str = "ТЕСТ 2026",
+        topic: str,
+        description: str = "Описание будет добавлено позже",
+        curator: str = "",
+        examiner: str = "",
+    ):
+        try:
+            self._parser.append_row_with_format(
+                spreadsheets_ids=self._parser.get_all_sheets_in_folder(FOLDER_ID),
+                key_title=key_title,
+                worksheet_title="Темы",
+                row_data=[topic, description, curator, examiner],
+            )
+        except Exception:
+            raise Exception("Ошибка добавления в таблицу")
+
+    def remove_topic(
+        self,
+        *,
+        key_title: str = "ТЕСТ 2026",
+        topic: str,
+    ):
+        try:
+            self._parser.delete_row_by_topic(
+                spreadsheets_ids=self._parser.get_all_sheets_in_folder(FOLDER_ID),
+                key_title=key_title,
+                worksheet_title="Темы",
+                theme_title=topic,
+            )
+        except Exception:
+            raise Exception("Ошибка добавления в таблицу")
 
 
 if __name__ == "__main__":
