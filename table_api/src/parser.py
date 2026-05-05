@@ -14,7 +14,7 @@ LOG_FILE = "table_api/logs/parser.log"
 
 class GoogleSheetsParser:
     """
-    Класс парсера Google Sheets для извлечения информации из Google Drive с Google Sheets.
+    Класс парсера Google Sheets для извлечения и записи информации из Google Drive с Google Sheets.
 
     Использует сервисный аккаунт Google Cloud, библиотеку ``gspread`` для простого синтаксиса извлечения данных из таблиц и официальную библиотеку ``google-api-client`` для извлечения всех таблиц в папке.
     """
@@ -30,8 +30,7 @@ class GoogleSheetsParser:
 
             credentials = service_account.Credentials.from_service_account_file(
                 credentials_path,
-                # !: Если необходимо добавить функционал записи убрать в конце .readonly, но лучше делать отдельный класс под запись
-                scopes=["https://www.googleapis.com/auth/drive.readonly"],
+                scopes=["https://www.googleapis.com/auth/drive"],
             )
             self._drive_service = build("drive", "v3", credentials=credentials)
 
