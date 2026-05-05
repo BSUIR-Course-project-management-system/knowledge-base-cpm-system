@@ -131,10 +131,7 @@ class RecommendationModule:
         if self._model is not None:
             return self._model
 
-        if (
-            self.search_manager is None
-            or self.search_manager.theme_finder is None
-        ):
+        if self.search_manager is None or self.search_manager.theme_finder is None:
             raise RuntimeError("Поиск не подготовлен, модель недоступна")
 
         return self.search_manager.theme_finder.model
@@ -142,7 +139,7 @@ class RecommendationModule:
     def search_with_explanations(
         self,
         query: str,
-        n_results: int = 4,
+        n_results: int = 7,
         max_distance: float = MAX_DISTANCE,
         is_used: bool | None = None,
         curator: str | None = None,
@@ -276,9 +273,7 @@ class RecommendationModule:
             )
 
         if document_focus:
-            parts.append(
-                "Основной акцент темы: " + ", ".join(document_focus[:4]) + "."
-            )
+            parts.append("Основной акцент темы: " + ", ".join(document_focus[:4]) + ".")
 
         return " ".join(parts)
 
@@ -482,9 +477,7 @@ class RecommendationModule:
         best_ratio = 0.0
         for item in self.topic_catalog:
             normalized_topic = item["_normalized_topic"]
-            ratio = SequenceMatcher(
-                None, normalized_document, normalized_topic
-            ).ratio()
+            ratio = SequenceMatcher(None, normalized_document, normalized_topic).ratio()
             if ratio > best_ratio:
                 best_ratio = ratio
                 best_match = item
@@ -526,12 +519,8 @@ class RecommendationModule:
 
             self.search_logger.info(f"{index}. Тема: {document}")
             self.search_logger.info(f"   Дистанция поиска: {distance_text}")
-            self.search_logger.info(
-                f"   Косинусное сходство: {similarity:.3f}"
-            )
-            self.search_logger.info(
-                f"   Степень соответствия: {similarity_label}"
-            )
+            self.search_logger.info(f"   Косинусное сходство: {similarity:.3f}")
+            self.search_logger.info(f"   Степень соответствия: {similarity_label}")
             self.search_logger.info(f"   Пояснение: {explanation}")
 
     def _log_topic_descriptions(
@@ -541,7 +530,9 @@ class RecommendationModule:
         self.topic_logger.info(f"Запрос: {query}")
 
         if not recommendations:
-            self.topic_logger.info("Подробные описания отсутствуют, так как темы не найдены.")
+            self.topic_logger.info(
+                "Подробные описания отсутствуют, так как темы не найдены."
+            )
             return
 
         for index, recommendation in enumerate(recommendations, start=1):
