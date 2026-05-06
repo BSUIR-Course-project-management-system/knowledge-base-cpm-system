@@ -75,6 +75,16 @@ python3 -m interface.main
 python -m interface.main
 ```
 
+## Тестирование
+
+Для тестирования программы использовалась библиотека **Pytest**. Для запуска тестов необходимо в терминале выполнить команду (в предварительно активированном виртуальном окружении).
+
+* Linux/macOS/Windows
+
+```python
+pytest
+```
+
 ## Авторы
 
 *  GitHub: [@Artemdjdj](https://github.com/Artemdjdj), [@Frostnout](https://github.com/dBurbas), [@Aratakrr1](https://github.com/suyeatolog), [@Gen1us02](https://github.com/Gen1us02)
