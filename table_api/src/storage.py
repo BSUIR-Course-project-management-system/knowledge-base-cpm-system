@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from table_api.src.parser import GoogleSheetsParser
 from table_api.src.loader import ILoader, JsonLoader
 from table_api.src.saver import ISaver, JsonSaver
-from table_api.src.topic_matcher import TopicMatcher
 from logger.logger import Logger
 
 LOG_FILE = "table_api/logs/storage.log"
