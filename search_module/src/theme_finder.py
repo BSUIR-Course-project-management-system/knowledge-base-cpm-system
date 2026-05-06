@@ -81,27 +81,6 @@ class ThemeFinder:
             self.logger.error(f"Ошибка при сохранении коллекции: {e}")
             raise
 
-        def _calculate_hybrid_score(
-            self, query: str, document: str, vector_distance: float
-        ) -> float:
-            """
-            Вспомогательная функция для расчета гибридной оценки.
-            """
-            # Формула перевода L2-расстояния нормализованных векторов в косинусное сходство (от -1.0 до 1.0)
-            cosine_sim = 1.0 - (vector_distance / 2.0)
-
-            # Ограничиваем нижний порог нулем (оценка от 0.0 до 1.0)
-            semantic_score = max(0.0, cosine_sim)
-
-            # Лексическое сходство с помощью RapidFuzz (от 0 до 1)
-            lexical_score = (
-                fuzz.token_sort_ratio(query.lower(), document.lower()) / 100.0
-            )
-
-            # Усредняем с весами 50/50
-            hybrid_score = (semantic_score * 0.5) + (lexical_score * 0.5)
-            return hybrid_score
-
     def search(
         self,
         query: str,
