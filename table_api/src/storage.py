@@ -95,6 +95,7 @@ class Storage:
         return default
 
     def get_unique_topics(self):
+        """Получение списка уникальных тем."""
         unique_topics = {}
 
         data = self._loader.load(GROUP_DATA_FILE)
@@ -165,8 +166,8 @@ class Storage:
         return json.dumps(formatted_topics, indent=2, ensure_ascii=False)
 
     def get_examiner_schedule(self, examiner: str, year: int = 2026):
-        """Заглушка"""
-        self._logger.info("Использование данных заглушки для графика")
+        """Получение расписания опроцентовок конкретного проверяющего"""
+        self._logger.info("Загрузка данных из файла для графика")
         data = self._loader.load(SCHEDULE_DATA_FILE)
         if not data:
             data = self._parser.fetch_examiner_schedule(
