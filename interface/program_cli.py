@@ -41,7 +41,7 @@ class ProgramCLI(cmd.Cmd):
     ``questionary`` для интерактивного ввода.
     """
 
-    prompt = " \033[1;36m*ввод:\033[0m "
+    prompt = " \033[1;36m◉ ввод:\033[0m "
 
     def __init__(self, table_module: "Storage"):
         self._table_module = table_module
@@ -90,7 +90,7 @@ class ProgramCLI(cmd.Cmd):
              _/╝    $$   /$l   /$l     ██║  ████║ ██║  ████║  ╚══██╔═══╝
            ./╝      $$ // $$ // $$     ██║ ██╔██║ ██║ ██╔██║     ██║
          ./╝ .•$l   $$/   $$/   $$     ██╚██╔╝██║ ██╚██╔╝██║     ██║
-       ./╝     $$   $$  _/$$    $$     ████╔╝ ██║ ████╔╝ ██║     ██║
+       ./╝     $$  . /  ./ /    $$     ████╔╝ ██║ ████╔╝ ██║     ██║
      ./╝       $$ /•$$_// $$╔.  $$╔.   ███╔╝  ██║ ███╔╝  ██║     ██║
     |╝         l$/  ld/╝  l$╝   l$╝    ╚══╝   ╚═╝ ╚══╝   ╚═╝     ╚═╝
                       
@@ -125,21 +125,19 @@ class ProgramCLI(cmd.Cmd):
         if arg:
             return super().do_help(arg)
 
-        # super().do_help(arg)
-
         console.print()
         console.print("[bold cyan]Быстрый старт:[/bold cyan]")
         console.print(
-            "- [green]update_information[/]   — получить актуальную информацию из облака"
+            "[green]⦿ update_information[/]   — получить актуальную информацию из облака"
         )
-        console.print("- [green]recommend[/]   — рекомендация темы проекта")
+        console.print("[green]⦿ recommend[/]   — рекомендация темы проекта")
         console.print(
-            "- [green]schedule_generate[/] — сгенерировать расписание приема опроцентовок для преподавателя(проверяющего)"
+            "[green]⦿ schedule_generate[/] — сгенерировать расписание приема опроцентовок для преподавателя(проверяющего)"
         )
-        console.print("- [green]list_topics[/]   — вывести список тем")
-        console.print("- [green]add_topic[/]   — добавить тему в облако")
-        console.print("- [green]remove_topic[/]   — удалить тему из облака")
-        console.print("- [green]exit[/]  — выйти из программы\n")
+        console.print("[green]⦿ list_topics[/]   — вывести список тем")
+        console.print("[green]⦿ add_topic[/]   — добавить тему в облако")
+        console.print("[green]⦿ remove_topic[/]   — удалить тему из облака")
+        console.print("[green]⦿ exit[/]  — выйти из программы\n")
 
     def _print_topic(self, topic: dict):
         """Вывод информации темы из словаря ``topic``.
@@ -394,7 +392,17 @@ class ProgramCLI(cmd.Cmd):
         console.rule("Планирование опроцентовок", characters="=", style="blue")
         try:
             project_name = questionary.text("Название проекта: ").ask()
-            reviewer_name = questionary.text("Имя проверяющего: ").ask()
+
+            if project_name is None or project_name.strip().lower() == "exit":
+                console.print("[yellow] Название проекта не может быть пустым.")
+                return
+
+            reviewer_name = questionary.text("Фамилия и инициалы проверяющего: ").ask()
+            if reviewer_name is None or reviewer_name.strip().lower() == "exit":
+                console.print(
+                    "[yellow] Фамилия и инициалы проверяющего не могут быть пустыми."
+                )
+                return
             start_date_str = questionary.text("Дата принятия темы (YYYY-MM-DD): ").ask()
             if not DateChecker.is_correct_format(start_date_str):
                 console.print("[yellow] Неверный формат даты")
@@ -402,14 +410,14 @@ class ProgramCLI(cmd.Cmd):
             end_date_str = questionary.text(
                 "Конечная дата (защита) (YYYY-MM-DD): "
             ).ask()
-            if not DateChecker.is_correct_format(start_date_str):
+            if not DateChecker.is_correct_format(end_date_str):
                 console.print("[yellow] Неверный формат даты")
                 return
 
             duration_minutes = questionary.text(
                 "Введите продолжительность опроцентовки:",
                 validate=lambda text: (
-                    (text.isdigit() and int(text) > 1 and int(text) <= 120)
+                    (text.isdigit() and int(text) >= 1 and int(text) <= 120)
                     or "Пожалуйста введите число (от 1 до 120)"
                 ),
                 default="30",
@@ -429,8 +437,32 @@ class ProgramCLI(cmd.Cmd):
                     "[red] Ошибка: конечная дата должна быть позже начальной."
                 )
                 return
+            topics = json.loads(self._table_module.get_unique_topics())
+            examiner_found = False
+            topic_found = False
+            for topic in topics:
+                if (
+                    not project_name.lower().strip()
+                    == topic.get("topic", "").lower().strip()
+                ):
+                    continue
+                topic_found = True
+                examiner = topic.get("examiner", "").lower().strip()
+                if not examiner:
+                    continue
+                if reviewer_name.lower().strip() in examiner:
+                    examiner_found = True
+            if not topic_found:
+                console.print("[red] Ошибка: нет такой темы.")
+                return
+            if not examiner_found:
+                console.print(
+                    "[red] Ошибка: нет такого проверяющего или он не отвественен за этот проект."
+                )
+                return
 
             data = json.loads(self._table_module.get_examiner_schedule(reviewer_name))
+
             occupied_intervals = DatetimeParser.parse_from_json(data)
 
             candidates = self._schedule_generator.generate_candidate_starts(
