@@ -86,6 +86,31 @@ class ThemeFinderManager:
         self.logger.info("Темы отфильтрованы")
         return filtered
 
+    def _deduplicate_by_original_id(self, results: Dict[str, Any]) -> Dict[str, Any]:
+        """Схлопывает дубликаты одной темы, оставляя ближайший вектор."""
+        docs = results.get("documents", [[]])[0]
+        dists = results.get("distances", [[]])[0]
+        metas = results.get("metadatas", [[]])[0]
+
+        best: Dict[str, tuple] = {}
+        for doc, dist, meta in zip(docs, dists, metas):
+            key = meta.get("original_id") or meta.get("id") or doc
+            if key not in best or dist < best[key][0]:
+                best[key] = (dist, doc, meta)
+
+        ordered = sorted(best.values(), key=lambda x: x[0])
+
+        out = {"documents": [[]], "distances": [[]], "metadatas": [[]]}
+        for dist, doc, meta in ordered:
+            out["documents"][0].append(doc)
+            out["distances"][0].append(dist)
+            out["metadatas"][0].append(meta)
+
+        self.logger.info(
+            f"После дедупликации: {len(out['documents'][0])} уникальных тем"
+        )
+        return out
+
     def search_relevant(
         self,
         query: str,
@@ -94,6 +119,7 @@ class ThemeFinderManager:
         is_used: bool = False,
         curator: Optional[str] = None,
         examiner: Optional[str] = None,
+        search_type: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Функция поиска релевантных тем"""
         if self.theme_finder is None:
@@ -106,7 +132,12 @@ class ThemeFinderManager:
             is_used=is_used,
             curator=curator,
             examiner=examiner,
+            search_type=search_type,
         )
-        self.logger.info("Ранжирование ием по релевантности")
+        self.logger.info("Фильтрация по расстоянию")
 
-        return self.filter_results_by_distance(raw_results, max_distance)
+        filtered = self.filter_results_by_distance(raw_results, max_distance)
+
+        filtered = self._deduplicate_by_original_id(filtered)
+
+        return filtered
