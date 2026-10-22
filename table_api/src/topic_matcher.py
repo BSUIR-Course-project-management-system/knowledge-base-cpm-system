@@ -16,7 +16,7 @@ class TopicMatcher:
         else:
             device = "cpu"
 
-        self.model = SentenceTransformer(model_path, device=device)
+        #self.model = SentenceTransformer(model_path, device=device)
         self._logger.info(f"Модель загружена на устройство: {device}")
 
     def are_topics_identical(
