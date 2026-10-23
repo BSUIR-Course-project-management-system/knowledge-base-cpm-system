@@ -1,7 +1,22 @@
-from sqlalchemy import DateTime, func, String, Integer, Boolean, ForeignKey
+from sqlalchemy import (
+    DateTime,
+    func,
+    String,
+    Integer,
+    Boolean,
+    ForeignKey,
+    CheckConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from enum import StrEnum
 from datetime import datetime
 import uuid
+
+
+class UserRole(StrEnum):
+    STUDENT = "student"
+    TEACHER = "teacher"
+    ADMIN = "admin"
 
 
 class Base(DeclarativeBase):
@@ -15,7 +30,29 @@ class Base(DeclarativeBase):
 
 class User(Base):
     __tablename__ = "users"
-    pass
+
+    id = mapped_column(Integer, primary_key=True)
+    email = mapped_column(String(255), unique=True, nullable=True, index=True)
+    student_number = mapped_column(String(32), unique=True, nullable=True, index=True)
+    password_hash = mapped_column(String, nullable=False)
+    role = mapped_column(String, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "(role = 'teacher' AND email IS NOT NULL AND student_id IS NULL) OR "
+            "(role = 'admin'   AND email IS NOT NULL AND student_id IS NULL) OR "
+            "(role = 'student' AND student_id IS NOT NULL)",
+            name="ck_users_login_identifier",
+        ),
+        CheckConstraint(
+            "student_id IS NULL OR student_id ~ '^[0-9]{8}$'",
+            name="ck_users_student_id_format",
+        ),
+        CheckConstraint(
+            "email IS NULL OR email ~* '^[^@[:space:]]+@[^@[:space:]]+$'",
+            name="ck_users_email_format",
+        ),
+    )
 
 
 class RefreshToken(Base):
