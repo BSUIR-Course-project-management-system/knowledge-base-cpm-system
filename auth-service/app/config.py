@@ -6,10 +6,11 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
-    db_url: str
-    jwt_secret: str
-    jwt_algorithm: str
-    expired_minutes: int
+    DB_URL: str
+    JWT_SECRET: str
+    JWT_ALGORITHM: str
+    ACCESS_TTL: int
+    REFRESH_TTl: int
 
 
 settings = Settings()  # type: ignore
