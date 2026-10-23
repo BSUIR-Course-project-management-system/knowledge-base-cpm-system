@@ -6,3 +6,4 @@ PyJWT[crypto]
 pydantic-settings
 sqlalchemy
 uvicorn
+alembic
