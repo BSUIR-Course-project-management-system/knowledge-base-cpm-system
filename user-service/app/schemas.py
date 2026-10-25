@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr
+from datetime import datetime
+import uuid
 
 
 class LoginSchema(BaseModel):
@@ -9,6 +11,14 @@ class LoginSchema(BaseModel):
 class TokenResponseSchema(BaseModel):
     access_token: str
     refresh_token: str
+
+
+class TokenCreateSchema(BaseModel):
+    jti: str
+    user_id: uuid.UUID
+    family_id: uuid.UUID
+    expires_at: datetime
+    replaced_by_jti: uuid.UUID
 
 
 class StudentRegistrationSchema(BaseModel):

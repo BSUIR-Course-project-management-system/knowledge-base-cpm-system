@@ -62,6 +62,5 @@ class RefreshToken(Base):
     user_id = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     family_id = mapped_column(String, index=True, nullable=False)
     expires_at = mapped_column(DateTime(timezone=True), nullable=False)
-    created_at = mapped_column(DateTime(timezone=True), server_default=func.now())
     revoked = mapped_column(Boolean, default=False, nullable=False)
     replaced_by_jti = mapped_column(String, nullable=True)
