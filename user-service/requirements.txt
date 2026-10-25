@@ -4,6 +4,7 @@ psycopg2-binary
 pwdlib[argon2]
 PyJWT[crypto]
 pydantic-settings
-sqlalchemy
+sqlalchemy[asyncio]
 uvicorn
+asyncpg
 alembic
