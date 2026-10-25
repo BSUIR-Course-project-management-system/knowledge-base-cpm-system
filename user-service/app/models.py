@@ -39,14 +39,14 @@ class User(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "(role = 'teacher' AND email IS NOT NULL AND student_id IS NULL) OR "
-            "(role = 'admin'   AND email IS NOT NULL AND student_id IS NULL) OR "
-            "(role = 'student' AND student_id IS NOT NULL)",
+            "(role = 'teacher' AND email IS NOT NULL AND student_number IS NULL) OR "
+            "(role = 'admin'   AND email IS NOT NULL AND student_number IS NULL) OR "
+            "(role = 'student' AND student_number IS NOT NULL)",
             name="ck_users_login_identifier",
         ),
         CheckConstraint(
-            "student_id IS NULL OR student_id ~ '^[0-9]{8}$'",
-            name="ck_users_student_id_format",
+            "student_number IS NULL OR student_number ~ '^[0-9]{8}$'",
+            name="ck_users_student_number_format",
         ),
         CheckConstraint(
             "email IS NULL OR email ~* '^[^@[:space:]]+@[^@[:space:]]+$'",
