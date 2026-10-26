@@ -58,8 +58,8 @@ class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
     jti = mapped_column(String, unique=True, index=True, nullable=False)
-    user_id = mapped_column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     family_id = mapped_column(String, index=True, nullable=False)
     expires_at = mapped_column(DateTime(timezone=True), nullable=False)
