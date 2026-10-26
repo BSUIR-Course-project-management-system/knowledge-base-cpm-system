@@ -31,7 +31,6 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id = mapped_column(Integer, primary_key=True)
     email = mapped_column(String(255), unique=True, nullable=True, index=True)
     student_number = mapped_column(String(32), unique=True, nullable=True, index=True)
     password_hash = mapped_column(String, nullable=False)
