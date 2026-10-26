@@ -1,11 +1,8 @@
 import uuid
-
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.repositories import TokenRepository, UserRepository
-
-from .schemas import (
+from app.schemas import (
     LoginSchema,
     RequestRefreshSchema,
     StudentRegistrationSchema,
@@ -13,7 +10,7 @@ from .schemas import (
     TokenCreateSchema,
     TokenResponseSchema,
 )
-from .security import (
+from app.security import (
     decode_refresh_token,
     generate_access_token,
     generate_refresh_token,

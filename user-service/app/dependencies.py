@@ -1,8 +1,8 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories import UserRepository, TokenRepository
-from .db import async_session
-from .service import UserService
+from app.db import async_session
+from app.service import UserService
 from typing import AsyncGenerator
 
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
 import uuid
 
@@ -46,3 +46,18 @@ class TeacherRegistrationSchema(BaseModel):
 
 class RequestRefreshSchema(BaseModel):
     refresh_token: str
+
+
+class UserOutSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    email: EmailStr | None
+    student_number: str | None
+    role: str
+
+
+class AdminUserUpdateSchema(BaseModel):
+    email: EmailStr | None = None
+    student_number: str | None = None
+    role: str | None = None
