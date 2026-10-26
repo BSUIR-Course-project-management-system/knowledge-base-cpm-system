@@ -27,6 +27,7 @@ copy /Y table_api\.env.example table_api\.env >nul
 
 mkdir table_api\secrets 2>nul
 mkdir search_module\data 2>nul
+mkdir table_api\data 2>nul
 
 echo Система поиска успешно установлена!
 echo Система управления курсовыми и дипломными проектами готова к запуску!

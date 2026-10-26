@@ -21,6 +21,8 @@ mkdir table_api/secrets/
 
 mkdir search_module/data/
 
+mkdir table_api/data/
+
 
 echo "Система поиска успешно установлена!"
 

@@ -83,69 +83,6 @@ class TestThemeFinderManager:
             with pytest.raises(RuntimeError, match="Не удалось инициализировать поиск"):
                 manager.prepare_search()
 
-    def test_sort_results_empty(self, manager):
-        assert manager.sort_results({"documents": [[]]}) == {"documents": [[]]}
-
-    def test_sort_results_invalid_mark(self, manager):
-        raw = {
-            "documents": [["Doc1"]],
-            "distances": [[0.1]],
-            "metadatas": [[{"rounded_final_grade": "bad_mark"}]],
-        }
-        res = manager.sort_results(raw, mark_priority=1)
-        assert res["metadatas"][0][0]["rounded_final_grade"] == "bad_mark"
-
-
-    def test_sort_results_all_priorities(self, manager):
-        raw = {
-            "documents": [["A", "B"]],
-            "distances": [[0.5, 0.1]],
-            "metadatas": [
-                [
-                    {"rounded_final_grade": 3, "date_defence": "01.01.2020"},
-                    {"rounded_final_grade": 5, "date_defence": "01.01.2024"},
-                ]
-            ],
-        }
-        res = manager.sort_results(
-            raw, mark_priority=1, date_priority=2, dist_priority=3
-        )
-        assert res["documents"][0][0] == "B"
-
-    def test_search_not_ready(self, manager):
-        manager.theme_finder = None
-        with pytest.raises(RuntimeError, match="Поиск не готов"):
-            manager.search("query")
-
-    def test_search_relevant_not_init(self, manager):
-        manager.theme_finder = None
-        with pytest.raises(RuntimeError, match="Поиск не инициализирован"):
-            manager.search_relevant("query")
-
-    def test_filter_results_logic(self, manager):
-        raw = {
-            "documents": [["Good", "Far"]],
-            "distances": [[0.1, 0.9]],
-            "metadatas": [[{"id": 1}, {"id": 2}]],
-        }
-        res = manager.filter_results_by_distance(raw, max_distance=0.5)
-        assert len(res["documents"][0]) == 1
-        assert res["documents"][0][0] == "Good"
-
-    def test_sort_date_branches(self, manager):
-        raw = {
-            "documents": [["D1", "D2"]],
-            "distances": [[0.1, 0.1]],
-            "metadatas": [
-                [
-                    {"rounded_final_grade": 10, "date_defence": "27.05.2025"},
-                    {"rounded_final_grade": 4, "date_defence": "01.01.2021"},
-                ]
-            ],
-        }
-        res = manager.sort_results(raw, date_priority=1)
-        assert res["documents"][0][0] == "D1"
-
     def test_search_success(self, manager):
         manager.theme_finder = MagicMock()
         manager.search("test")

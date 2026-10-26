@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from table_api.src.parser import GoogleSheetsParser
 from table_api.src.loader import ILoader, JsonLoader
 from table_api.src.saver import ISaver, JsonSaver
-from table_api.src.topic_matcher import TopicMatcher
 from logger.logger import Logger
 
 LOG_FILE = "table_api/logs/storage.log"
@@ -95,6 +94,7 @@ class Storage:
         return default
 
     def get_unique_topics(self):
+        """Получение списка уникальных тем."""
         unique_topics = {}
 
         data = self._loader.load(GROUP_DATA_FILE)
@@ -153,7 +153,7 @@ class Storage:
                 {
                     "id": str(idx),
                     "topic": topic,
-                    "description:": info.get("description", "").strip(),
+                    "description": info.get("description", "").strip(),
                     "is_used": info.get("is_used", False),
                     "curator": info.get("curator", ""),
                     "examiner": info.get("examiner", ""),
@@ -165,8 +165,8 @@ class Storage:
         return json.dumps(formatted_topics, indent=2, ensure_ascii=False)
 
     def get_examiner_schedule(self, examiner: str, year: int = 2026):
-        """Заглушка"""
-        self._logger.info("Использование данных заглушки для графика")
+        """Получение расписания опроцентовок конкретного проверяющего"""
+        self._logger.info("Загрузка данных из файла для графика")
         data = self._loader.load(SCHEDULE_DATA_FILE)
         if not data:
             data = self._parser.fetch_examiner_schedule(
@@ -188,7 +188,40 @@ class Storage:
 
         return json.dumps(examiner_data, ensure_ascii=False, indent=2)
 
-        # return json_result
+    def add_topic(
+        self,
+        *,
+        key_title: str = "ТЕСТ 2026",
+        topic: str,
+        description: str = "Описание будет добавлено позже",
+        curator: str = "",
+        examiner: str = "",
+    ):
+        try:
+            self._parser.append_row_with_format(
+                spreadsheets_ids=self._parser.get_all_sheets_in_folder(FOLDER_ID),
+                key_title=key_title,
+                worksheet_title="Темы",
+                row_data=[topic, description, curator, examiner],
+            )
+        except Exception:
+            raise Exception("Ошибка добавления в таблицу")
+
+    def remove_topic(
+        self,
+        *,
+        key_title: str = "ТЕСТ 2026",
+        topic: str,
+    ):
+        try:
+            self._parser.delete_row_by_topic(
+                spreadsheets_ids=self._parser.get_all_sheets_in_folder(FOLDER_ID),
+                key_title=key_title,
+                worksheet_title="Темы",
+                theme_title=topic,
+            )
+        except Exception:
+            raise Exception("Ошибка добавления в таблицу")
 
 
 if __name__ == "__main__":

@@ -75,36 +75,6 @@ def main():
 
                 theme_printer.print_themes(search_results)
 
-                if len(search_results["documents"][0]) > 1:
-                    while True:
-                        menu_sort_printer.print_menu()
-                        user_sort_input = input(
-                            "Введите способ сортировки (Enter для нового поиска): "
-                        ).strip()
-
-                        if not user_sort_input:
-                            break
-
-                        match user_sort_input:
-                            case "1":
-                                filtered = manager.sort_results(
-                                    search_results, mark_priority=1
-                                )
-                                logger.info("Темы отсортированы по оценке")
-                            case "2":
-                                filtered = manager.sort_results(
-                                    search_results, date_priority=1
-                                )
-                                logger.info("Темы отсортированы по дате")
-                            case "3":
-                                filtered = manager.sort_results(
-                                    search_results, dist_priority=1
-                                )
-                                logger.info("Темы отсортированы по релевантности")
-                            case _:
-                                break
-
-                        theme_printer.print_themes(filtered)
 
             except Exception as e:
                 logger.error(f"Ошибка в процессе поиска: {e}")
