@@ -6,6 +6,7 @@ import re
 MAX_TECH_LENGTH = 50
 MAX_TECHNOLOGIES = 10
 
+
 class LoginSchema(BaseModel):
     login: str
     password: str
@@ -21,7 +22,7 @@ class TokenCreateSchema(BaseModel):
     user_id: uuid.UUID
     family_id: str
     expires_at: datetime
-    replaced_by_jti: uuid.UUID | None = None
+    replaced_by_jti: str | None = None
 
 
 class StudentRegistrationSchema(BaseModel):
@@ -68,19 +69,11 @@ class RequestRefreshSchema(BaseModel):
     refresh_token: str
 
 
-class UserOutSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    email: EmailStr | None
-    student_number: str | None
-    role: str
-
-
 class AdminUserUpdateSchema(BaseModel):
     email: EmailStr | None = None
     student_number: str | None = None
     role: str | None = None
+
 
 class StudentProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -89,6 +82,14 @@ class StudentProfileOut(BaseModel):
     middle_name: str | None
     group: str
     technologies: list[str]
+
+
+class TeacherProfileOut(BaseModel):             # ← НОВЫЙ, до UserOutSchema
+    model_config = ConfigDict(from_attributes=True)
+    first_name: str
+    surname: str
+    middle_name: str | None
+
 
 class SelfUpdateSchema(BaseModel):
     email: EmailStr | None = None
@@ -121,3 +122,15 @@ class SelfUpdateSchema(BaseModel):
         if len(cleaned) > MAX_TECHNOLOGIES:
             raise ValueError(f"Too many technologies (max {MAX_TECHNOLOGIES})")
         return cleaned
+
+
+class UserOutSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    email: EmailStr | None
+    student_number: str | None
+    role: str
+
+    student_profile: StudentProfileOut | None = None
+    teacher_profile: TeacherProfileOut | None = None
