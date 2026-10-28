@@ -7,7 +7,8 @@ from sqlalchemy import (
     ForeignKey,
     CheckConstraint,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from enum import StrEnum
 from datetime import datetime
 import uuid
@@ -52,6 +53,56 @@ class User(Base):
             name="ck_users_email_format",
         ),
     )
+
+    student_profile: Mapped["StudentProfile | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    teacher_profile: Mapped["TeacherProfile | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class StudentProfile(Base):
+    __tablename__ = "student_profiles"
+
+    user_id : Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False
+    )
+
+    first_name = mapped_column(String(100), nullable=False)
+    last_name = mapped_column(String(100), nullable=False)
+    middle_name = mapped_column(String(100), nullable=False)
+    group = mapped_column(String(16), nullable=False)
+    technologies: Mapped[list[str]] = mapped_column(
+        ARRAY(String(50)),
+        nullable=False,
+        server_default="{}",
+    )
+
+    user: Mapped["User"] = relationship(back_populates="student_profile")
+
+
+class TeacherProfile(Base):
+    __tablename__ = "teacher_profiles"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+    first_name = mapped_column(String(100), nullable=False)
+    surname = mapped_column(String(100), nullable=False)
+    middle_name = mapped_column(String(100), nullable=True)
+
+    user: Mapped["User"] = relationship(back_populates="teacher_profile")
 
 
 class RefreshToken(Base):
