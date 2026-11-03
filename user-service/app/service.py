@@ -1,17 +1,19 @@
 import uuid
+
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories import TokenRepository, UserRepository
+
+from app.repositories import TokenRepository, UserRepository, ProfileRepository
 from app.schemas import (
     LoginSchema,
     RequestRefreshSchema,
     StudentRegistrationSchema,
     TeacherRegistrationSchema,
     TokenCreateSchema,
-    TokenResponseSchema,
+    TokenResponseSchema, StudentProfileOut, TeacherProfileOut,
 )
 from app.security import (
-    decode_refresh_token,
+    decode_token,
     generate_access_token,
     generate_refresh_token,
     hash_password,
@@ -21,17 +23,19 @@ from app.security import (
 
 class UserService:
     def __init__(
-        self,
-        user_repo: UserRepository,
-        token_repo: TokenRepository,
-        session: AsyncSession,
+            self,
+            user_repo: UserRepository,
+            token_repo: TokenRepository,
+            profile_repo: ProfileRepository,
+            session: AsyncSession,
     ) -> None:
         self.session = session
         self.user_repo = user_repo
         self.token_repo = token_repo
+        self.profile_repo = profile_repo
 
     async def register(
-        self, data: StudentRegistrationSchema | TeacherRegistrationSchema
+            self, data: StudentRegistrationSchema | TeacherRegistrationSchema
     ) -> TokenResponseSchema:
         if data.password != data.password_confirm:
             raise HTTPException(
@@ -60,6 +64,22 @@ class UserService:
             password_hash=hash_password(data.password),
             role=data.role,
         )
+
+        if isinstance(data, StudentRegistrationSchema):
+            await self.profile_repo.create_student_profile(
+                user_id=user.id,
+                first_name=data.first_name,
+                surname=data.surname,
+                middle_name=data.middle_name,
+                group=data.group,
+            )
+        elif isinstance(data, TeacherRegistrationSchema):
+            await self.profile_repo.create_teacher_profile(
+                user_id=user.id,
+                first_name=data.first_name,
+                surname=data.surname,
+                middle_name=data.middle_name,
+            )
 
         family_id = str(uuid.uuid4())
         access_token = generate_access_token(user.id, user.role)
@@ -109,7 +129,7 @@ class UserService:
         )
 
     async def refresh(self, data: RequestRefreshSchema) -> TokenResponseSchema:
-        payload = decode_refresh_token(data.refresh_token)
+        payload = decode_token(data.refresh_token)
         jti = payload["jti"]
 
         refresh_token = await self.token_repo.get_by_jti(jti)
@@ -152,9 +172,9 @@ class UserService:
         return TokenResponseSchema(access_token=new_access, refresh_token=new_refresh)
 
     async def list_users(
-        self,
-        limit: int = 20,
-        offset: int = 0,
+            self,
+            limit: int = 20,
+            offset: int = 0,
     ) -> list:
         users = await self.user_repo.list(limit=limit, offset=offset)
         return list(users)
@@ -226,3 +246,59 @@ class UserService:
         count = await self.token_repo.revoke_all_for_user(user_id)
         await self.session.commit()
         return count
+
+    async def update_profile(self, user_id: uuid.UUID, **fields) -> StudentProfileOut | TeacherProfileOut:
+        user = await self.user_repo.get_by_id(user_id)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found.",
+            )
+
+        new_email = fields.pop("email", None)
+        if new_email is not None and new_email != user.email:
+            existing = await self.user_repo.get_by_email(new_email)
+            if existing is not None and existing.id != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="User with this email already exists.",
+                )
+            user.email = new_email
+            await self.session.flush([user])
+
+        profile_fields = {
+            k: fields.pop(k)
+            for k in ("first_name", "surname", "middle_name", "group", "technologies")
+            if k in fields
+        }
+
+        if user.role == "student":
+            await self.profile_repo.update_student_profile(user_id, **profile_fields)
+        elif user.role == "teacher":
+            if "group" in profile_fields or "technologies" in profile_fields:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Teacher cannot have group or technologies.",
+                )
+            await self.profile_repo.update_teacher_profile(user_id, **profile_fields)
+        else:
+            if profile_fields:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Admin has no profile.",
+                )
+
+        if fields:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Fields not allowed: {', '.join(fields)}",
+            )
+
+        await self.session.commit()
+
+        return StudentProfileOut(**profile_fields) if user.role == "student" else TeacherProfileOut(**profile_fields)
+
+    async def get_profile(self, user_id: uuid.UUID, role: str) -> StudentProfileOut | TeacherProfileOut:
+        return StudentProfileOut.model_validate(
+            await self.profile_repo.get_student_profile(user_id)) if role == "student" else TeacherProfileOut.model_validate(
+            await self.profile_repo.get_teacher_profile(user_id))

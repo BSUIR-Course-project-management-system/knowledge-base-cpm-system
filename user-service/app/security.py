@@ -3,12 +3,12 @@ import datetime
 import uuid
 from typing import Tuple, Dict
 import jwt
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer
 from pwdlib import PasswordHash
 
 from .config import settings
 
-oauth2_schema = OAuth2PasswordBearer(tokenUrl="/login")
+bearer = HTTPBearer()
 password_hash = PasswordHash.recommended()
 
 UTC = datetime.timezone.utc
@@ -46,8 +46,7 @@ def generate_refresh_token(
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     return token, jti, expires_at
 
-
-def decode_refresh_token(token: str) -> Dict:
+def decode_token(token: str) -> Dict:
     try:
         payload = jwt.decode(
             token, key=settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
@@ -55,7 +54,7 @@ def decode_refresh_token(token: str) -> Dict:
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired."
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
         )
     except jwt.InvalidSignatureError:
         raise HTTPException(

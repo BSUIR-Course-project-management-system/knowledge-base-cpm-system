@@ -3,6 +3,9 @@ from datetime import datetime
 import uuid
 import re
 
+MAX_TECH_LENGTH = 50
+MAX_TECHNOLOGIES = 10
+
 
 class LoginSchema(BaseModel):
     login: str
@@ -19,7 +22,7 @@ class TokenCreateSchema(BaseModel):
     user_id: uuid.UUID
     family_id: str
     expires_at: datetime
-    replaced_by_jti: uuid.UUID | None = None
+    replaced_by_jti: str | None = None
 
 
 class StudentRegistrationSchema(BaseModel):
@@ -66,6 +69,67 @@ class RequestRefreshSchema(BaseModel):
     refresh_token: str
 
 
+class AdminUserUpdateSchema(BaseModel):
+    email: EmailStr | None = None
+    student_number: str | None = None
+    role: str | None = None
+
+
+class StudentProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    first_name: str
+    surname: str
+    middle_name: str | None
+    group: str
+    technologies: list[str]
+
+
+class TeacherProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    first_name: str
+    surname: str
+    middle_name: str | None
+
+
+class StudentUpdateSchema(BaseModel):
+    email: EmailStr | None = None
+    first_name: str | None = None
+    surname: str | None = None
+    middle_name: str | None = None
+    group: str | None = None
+    technologies: list[str] | None = None
+
+    @field_validator("technologies", mode="after")
+    @classmethod
+    def normalize_technologies(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for raw in value:
+            name = raw.strip()
+            if not name:
+                continue
+            if len(name) > MAX_TECH_LENGTH:
+                raise ValueError(
+                    f"Technology name too long (max {MAX_TECH_LENGTH}): {name!r}"
+                )
+            key = name.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            cleaned.append(name)
+        if len(cleaned) > MAX_TECHNOLOGIES:
+            raise ValueError(f"Too many technologies (max {MAX_TECHNOLOGIES})")
+        return cleaned
+
+class TeacherUpdateSchema(BaseModel):
+    email: EmailStr | None = None
+    first_name: str | None = None
+    surname: str | None = None
+    middle_name: str | None = None
+
+
 class UserOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -74,8 +138,10 @@ class UserOutSchema(BaseModel):
     student_number: str | None
     role: str
 
+    student_profile: StudentProfileOut | None = None
+    teacher_profile: TeacherProfileOut | None = None
 
-class AdminUserUpdateSchema(BaseModel):
-    email: EmailStr | None = None
-    student_number: str | None = None
-    role: str | None = None
+class CurrentUserOutSchema(BaseModel):
+    user_id: uuid.UUID
+    role: str
+
