@@ -78,7 +78,7 @@ class StudentProfile(Base):
     )
 
     first_name = mapped_column(String(100), nullable=False)
-    last_name = mapped_column(String(100), nullable=False)
+    surname = mapped_column(String(100), nullable=False)
     middle_name = mapped_column(String(100), nullable=False)
     group = mapped_column(String(16), nullable=False)
     technologies: Mapped[list[str]] = mapped_column(

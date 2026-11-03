@@ -1,6 +1,6 @@
 import uuid
 from fastapi import Depends, FastAPI, Query, status
-from app.dependencies import get_service
+from app.dependencies import get_service, get_current_user
 from app.schemas import (
     AdminUserUpdateSchema,
     LoginSchema,
@@ -8,7 +8,7 @@ from app.schemas import (
     StudentRegistrationSchema,
     TeacherRegistrationSchema,
     TokenResponseSchema,
-    UserOutSchema,
+    UserOutSchema, StudentProfileOut, StudentUpdateSchema, CurrentUserOutSchema, TeacherProfileOut,
 )
 from .service import UserService
 import uvicorn
@@ -104,6 +104,23 @@ async def revoke_user_sessions(
     count = await service.revoke_user_sessions(user_id)
     return {"revoked": count}
 
+
+@app.patch("/me", response_model=StudentProfileOut | TeacherProfileOut)
+async def update_student_profile(
+    schema: StudentUpdateSchema,
+    service: UserService = Depends(get_service),
+    user: CurrentUserOutSchema = Depends(get_current_user),
+) -> StudentProfileOut | TeacherProfileOut:
+
+    return await service.update_profile(user.user_id, **schema.model_dump(exclude_unset=True))
+
+@app.get("/me", response_model=StudentProfileOut | TeacherProfileOut)
+async def get_student_profile(
+    service: UserService = Depends(get_service),
+    user: CurrentUserOutSchema = Depends(get_current_user),
+) -> StudentProfileOut | TeacherProfileOut:
+    print(user)
+    return await service.get_profile(user.user_id, user.role)
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)

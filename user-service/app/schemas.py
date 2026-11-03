@@ -84,14 +84,14 @@ class StudentProfileOut(BaseModel):
     technologies: list[str]
 
 
-class TeacherProfileOut(BaseModel):             # ← НОВЫЙ, до UserOutSchema
+class TeacherProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     first_name: str
     surname: str
     middle_name: str | None
 
 
-class SelfUpdateSchema(BaseModel):
+class StudentUpdateSchema(BaseModel):
     email: EmailStr | None = None
     first_name: str | None = None
     surname: str | None = None
@@ -123,6 +123,12 @@ class SelfUpdateSchema(BaseModel):
             raise ValueError(f"Too many technologies (max {MAX_TECHNOLOGIES})")
         return cleaned
 
+class TeacherUpdateSchema(BaseModel):
+    email: EmailStr | None = None
+    first_name: str | None = None
+    surname: str | None = None
+    middle_name: str | None = None
+
 
 class UserOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -134,3 +140,8 @@ class UserOutSchema(BaseModel):
 
     student_profile: StudentProfileOut | None = None
     teacher_profile: TeacherProfileOut | None = None
+
+class CurrentUserOutSchema(BaseModel):
+    user_id: uuid.UUID
+    role: str
+
