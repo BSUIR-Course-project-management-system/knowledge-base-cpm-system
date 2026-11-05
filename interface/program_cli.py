@@ -238,6 +238,7 @@ class ProgramCLI(cmd.Cmd):
             console.print("\n[bold yellow] Удаление прервано пользователем.[/]")
             return
         except Exception as e:
+            is_success = False
             console.print(f"[bold red] Ошибка в процессе удаления: {e}[/]")
         if is_success:
             console.print("[bold green]Успешное удаление!")
