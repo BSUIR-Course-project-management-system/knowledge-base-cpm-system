@@ -1,16 +1,16 @@
+import logging
 from typing import Any, Optional
 
+import torch
 from sentence_transformers import SentenceTransformer
 
-from logger.logger import Logger
-from search_module.src.data_manager import DataManager
-from search_module.src.settings import PATH_TO_MODEL, THEME_FINDER_LOG_FILE
-import torch
+from app.search_module.src.data_manager import DataManager
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ThemeFinder:
-    """Класс для поиска тем"""
-
     def __init__(self, data_manager: DataManager) -> None:
         if torch.backends.mps.is_available():
             device = "mps"
@@ -19,14 +19,13 @@ class ThemeFinder:
         else:
             device = "cpu"
 
-        self.model = SentenceTransformer("BAAI/bge-m3", device=device)
+        logger.info(f"Загрузка модели {settings.MODEL_NAME} на устройство {device}")
+        self.model = SentenceTransformer(settings.MODEL_NAME, device=device)
         self.data_manager = data_manager
-        self.logger = Logger(THEME_FINDER_LOG_FILE, level="debug")
 
     def _build_meta(
         self, item: dict, field_type: str, tech_item: Optional[str] = None
     ) -> dict:
-        """Готовит metadata для одного вектора."""
         clean_meta: dict = {}
         for k, v in item.items():
             clean_key = k.replace(":", "").strip()
@@ -44,8 +43,7 @@ class ThemeFinder:
         return clean_meta
 
     def make_collection(self) -> None:
-        """Формирует векторы: 1 по topic + по одному на каждую технологию."""
-        self.logger.info("Инициализация создания коллекции векторов")
+        logger.info("Инициализация создания коллекции векторов")
 
         if not self.data_manager.data:
             raise RuntimeError("Данные в DataManager пусты.")
@@ -57,9 +55,9 @@ class ThemeFinder:
             existing = collection.get()
             if existing.get("ids"):
                 collection.delete(ids=existing["ids"])
-                self.logger.debug(f"Удалено {len(existing['ids'])} старых записей")
+                logger.debug(f"Удалено {len(existing['ids'])} старых записей")
         except Exception as e:
-            self.logger.warning(f"Очистка не удалась: {e}")
+            logger.warning(f"Очистка не удалась: {e}")
 
         texts_for_embedding: list[str] = []
         documents_for_storage: list[str] = []
@@ -87,20 +85,18 @@ class ThemeFinder:
                     documents_for_storage.append(topic if topic else tech)
                     ids.append(f"{item_id}__tech__{j}")
                     metadatas.append(
-                        self._build_meta(
-                            item, field_type="technologies", tech_item=tech
-                        )
+                        self._build_meta(item, field_type="technologies", tech_item=tech)
                     )
 
         if not texts_for_embedding:
             raise RuntimeError("Нет данных для индексации (topic и technologies пусты).")
 
-        self.logger.debug(f"Кодирование {len(texts_for_embedding)} векторов")
+        logger.info(f"Кодирование {len(texts_for_embedding)} векторов. Это может занять время...")
         embeddings = self.model.encode(
-            texts_for_embedding, show_progress_bar=True, normalize_embeddings=True
+            texts_for_embedding, show_progress_bar=False, normalize_embeddings=True
         ).tolist()
 
-        self.logger.debug("Запись данных в ChromaDB")
+        logger.debug("Запись данных в ChromaDB")
         try:
             collection.add(
                 embeddings=embeddings,
@@ -109,11 +105,9 @@ class ThemeFinder:
                 metadatas=metadatas,
             )
             total_count = collection.count()
-            self.logger.info(
-                f"Коллекция создана. Записей в базе: {total_count}"
-            )
+            logger.info(f"Коллекция создана. Записей в базе: {total_count}")
         except Exception as e:
-            self.logger.error(f"Ошибка при сохранении коллекции: {e}")
+            logger.error(f"Ошибка при сохранении коллекции: {e}")
             raise
 
     def search(
@@ -121,12 +115,9 @@ class ThemeFinder:
         query: str,
         n_results: int = 7,
         is_used: Optional[bool] = None,
-        curator: Optional[str] = None,
-        examiner: Optional[str] = None,
-        search_type: Optional[str] = None,
+        проверяющий: Optional[str] = None,
     ) -> Any:
-        """Векторный поиск. search_type=None — ищем по обоим полям."""
-        self.logger.info(f"Поиск по запросу: {query} (тип: {search_type or 'both'})")
+        logger.info(f"Поиск по запросу: {query}")
 
         query_emb = self.model.encode(
             [query], show_progress_bar=False, normalize_embeddings=True
@@ -135,12 +126,13 @@ class ThemeFinder:
         conditions = []
         if is_used is not None:
             conditions.append({"is_used": is_used})
-        if curator and curator.strip():
-            conditions.append({"curator": curator.strip()})
-        if examiner and examiner.strip():
-            conditions.append({"examiner": examiner.strip()})
-        if search_type in ("topic", "technologies"):
-            conditions.append({"field_type": search_type})
+        if проверяющий and проверяющий.strip():
+            conditions.append({
+                "$or": [
+                    {"curator": проверяющий.strip()},
+                    {"examiner": проверяющий.strip()},
+                ]
+            })
 
         where_filter = None
         if len(conditions) == 1:
@@ -148,9 +140,8 @@ class ThemeFinder:
         elif len(conditions) > 1:
             where_filter = {"$and": conditions}
 
-        internal_n = n_results * 3 if search_type in (None, "technologies") else n_results
-
-        self.logger.debug(f"Фильтр: {where_filter}; n_results={internal_n}")
+        internal_n = n_results * 3
+        logger.debug(f"Фильтр: {where_filter}; n_results={internal_n}")
 
         results = self.data_manager.collection.query(
             query_embeddings=query_emb,
@@ -159,5 +150,5 @@ class ThemeFinder:
             where=where_filter,
         )
 
-        self.logger.info("Поиск окончен")
+        logger.info("Векторный поиск окончен")
         return results
