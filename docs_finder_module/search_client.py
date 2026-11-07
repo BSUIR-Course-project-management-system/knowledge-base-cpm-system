@@ -2,45 +2,70 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any, Dict, List, Optional, Set
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import requests
 
+OPENALEX_URL = "https://api.openalex.org/works"
+
 SESSION = requests.Session()
 SESSION.headers.update({
-    "User-Agent": "AcademicSourceFinder/1.1 (educational research tool)",
+    "User-Agent": "AcademicSourceFinder/2.0 (educational research tool)",
     "Accept": "application/json",
 })
 
-OPENALEX_URL = "https://api.openalex.org/works"
+# docs_finder_module и search_module находятся рядом в корне проекта.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+MODEL_PATH = PROJECT_ROOT / "search_module" / "models" / "all-MiniLM-L6-v2"
 
-STOP_WORDS = {
-    "the", "and", "for", "with", "from", "into", "using", "use", "based",
-    "about", "study", "research", "of", "in", "on", "to", "a", "an",
-    "и", "в", "во", "на", "для", "по", "с", "со", "из", "от", "о", "об",
-    "как", "при", "над", "под", "исследование", "исследования", "изучение",
-}
+_MODEL = None
 
-ALIASES = {
-    "robot": {"robot", "robots", "robotic", "robotics", "робот", "роботы",
-              "робота", "роботов", "робототехника", "роботизированный"},
-    "computer": {"computer", "computers", "компьютер", "компьютерное",
-                 "компьютерный", "вычислительный"},
-    "vision": {"vision", "visual", "визуальный", "зрение", "машинное"},
-    "learning": {"learning", "learn", "обучение", "обучения"},
-    "medical": {"medical", "medicine", "clinical", "медицина", "медицинский",
-                "клинический"},
-}
+
+def _get_model():
+    """Загружает локальную модель один раз за запуск программы."""
+    global _MODEL
+    if _MODEL is None:
+        if not MODEL_PATH.is_dir():
+            raise FileNotFoundError(
+                "Не найдена локальная модель all-MiniLM-L6-v2. "
+                f"Ожидаемый путь: {MODEL_PATH}"
+            )
+
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:
+            raise RuntimeError(
+                "Для семантического поиска установите sentence-transformers: "
+                "pip install sentence-transformers"
+            ) from exc
+
+        # Выбор устройства аналогичен ThemeFinder в search_module.
+        try:
+            import torch
+            if torch.backends.mps.is_available():
+                device = "mps"
+            elif torch.cuda.is_available():
+                device = "cuda"
+            else:
+                device = "cpu"
+        except ImportError:
+            device = "cpu"
+
+        _MODEL = SentenceTransformer(str(MODEL_PATH), device=device)
+
+    return _MODEL
 
 
 def translate_to_english(text: str) -> str:
-    """Переводит запрос, но не ломает поиск при недоступности переводчика."""
+    """Переводит русский запрос для OpenAlex; при сбое оставляет оригинал."""
     if not re.search(r"[А-Яа-яЁё]", text):
         return text
+
     try:
         from deep_translator import GoogleTranslator
-        result = GoogleTranslator(source="auto", target="en").translate(text)
-        return result.strip() if result and result.strip() else text
+        translated = GoogleTranslator(source="auto", target="en").translate(text)
+        return translated.strip() if translated and translated.strip() else text
     except Exception:
         return text
 
@@ -49,7 +74,8 @@ def _request_json(url: str, params: dict, retries: int = 2) -> Optional[dict]:
     """GET JSON с таймаутом и ограниченным числом повторов."""
     for attempt in range(retries + 1):
         try:
-            response = SESSION.get(url, params=params, timeout=20)
+            response = SESSION.get(url, params=params, timeout=25)
+
             if response.status_code == 429:
                 if attempt < retries:
                     retry_after = response.headers.get("Retry-After", "")
@@ -67,15 +93,17 @@ def _request_json(url: str, params: dict, retries: int = 2) -> Optional[dict]:
 
             response.raise_for_status()
             return response.json()
+
         except (requests.RequestException, ValueError):
             if attempt < retries:
                 time.sleep(1 + attempt)
             else:
                 return None
+
     return None
 
 
-def _clean_abstract(value: Optional[str], limit: int = 1200) -> str:
+def _clean_abstract(value: Optional[str], limit: int = 4000) -> str:
     if not value:
         return ""
     value = re.sub(r"\s+", " ", str(value)).strip()
@@ -86,10 +114,12 @@ def _openalex_abstract(inverted_index: Optional[dict]) -> str:
     """Восстанавливает аннотацию из inverted index OpenAlex."""
     if not inverted_index:
         return ""
+
     words = []
     for word, positions in inverted_index.items():
         for position in positions:
             words.append((position, word))
+
     words.sort(key=lambda pair: pair[0])
     return " ".join(word for _, word in words)
 
@@ -111,13 +141,14 @@ def _search_openalex(query: str, limit: int) -> List[Dict[str, Any]]:
     for item in payload.get("results", []):
         authors = []
         for authorship in (item.get("authorships") or [])[:5]:
-            name = (authorship.get("author") or {}).get("display_name")
-            if name:
-                authors.append(name)
+            author = (authorship.get("author") or {}).get("display_name")
+            if author:
+                authors.append(author)
 
         location = item.get("primary_location") or {}
         source = location.get("source") or {}
         doi = item.get("doi")
+
         papers.append({
             "title": item.get("title") or "Без названия",
             "authors": ", ".join(authors) or "Авторы не указаны",
@@ -132,61 +163,8 @@ def _search_openalex(query: str, limit: int) -> List[Dict[str, Any]]:
             "doi": doi,
             "source": "OpenAlex",
         })
+
     return papers
-
-
-def _canonical_word(word: str) -> str:
-    for canonical, variants in ALIASES.items():
-        if word in variants:
-            return canonical
-    return word
-
-
-def _tokens(text: str) -> Set[str]:
-    words = re.findall(r"[a-zа-яё0-9]+", (text or "").lower())
-    return {
-        _canonical_word(w)
-        for w in words
-        if len(w) > 2 and w not in STOP_WORDS
-    }
-
-
-def _term_is_present(term: str, document_tokens: Set[str]) -> bool:
-    return _canonical_word(term) in document_tokens
-
-
-def _query_terms(query: str) -> List[str]:
-    """Получает содержательные слова запроса без служебных слов."""
-    return sorted(_tokens(query))
-
-
-def _relevance_score(paper: Dict[str, Any], query_variants: List[str]) -> float:
-    """Единая оценка: название важнее аннотации, учитывается покрытие запроса."""
-    title_tokens = _tokens(paper.get("title", ""))
-    abstract_tokens = _tokens(paper.get("abstract", ""))
-    full_tokens = title_tokens | abstract_tokens
-
-    best_score = 0.0
-    for query in query_variants:
-        terms = _query_terms(query)
-        if not terms:
-            continue
-
-        matched_title = sum(_term_is_present(t, title_tokens) for t in terms)
-        matched_all = sum(_term_is_present(t, full_tokens) for t in terms)
-        title_coverage = matched_title / len(terms)
-        total_coverage = matched_all / len(terms)
-
-        # Сильный бонус за слова в заголовке; небольшая прибавка за аннотацию.
-        score = (title_coverage * 70) + (total_coverage * 30)
-
-        # Совпадение всей короткой темы особенно важно.
-        if len(terms) <= 4 and matched_all == len(terms):
-            score += 15
-
-        best_score = max(best_score, score)
-
-    return min(best_score, 100.0)
 
 
 def _dedup_key(paper: Dict[str, Any]) -> str:
@@ -196,12 +174,67 @@ def _dedup_key(paper: Dict[str, Any]) -> str:
     return re.sub(r"[^a-z0-9а-яё]+", "", paper.get("title", "").lower())
 
 
+def _paper_text(paper: Dict[str, Any]) -> str:
+    """Собирает текст для сравнения; заголовок повторяется для его усиления."""
+    title = (paper.get("title") or "").strip()
+    abstract = (paper.get("abstract") or "").strip()
+
+    if abstract:
+        return f"{title}. {title}. {abstract}"
+    return title
+
+
+def _semantic_rerank(
+    papers: List[Dict[str, Any]],
+    query_variants: List[str],
+) -> List[Dict[str, Any]]:
+    """Ранжирует статьи по cosine similarity модели all-MiniLM-L6-v2."""
+    if not papers:
+        return []
+
+    model = _get_model()
+    documents = [_paper_text(paper) for paper in papers]
+
+    # Нормализованные embeddings позволяют считать cosine similarity
+    # обычным скалярным произведением.
+    document_vectors = model.encode(
+        documents,
+        batch_size=32,
+        show_progress_bar=False,
+        normalize_embeddings=True,
+        convert_to_numpy=True,
+    )
+
+    query_vectors = model.encode(
+        query_variants,
+        show_progress_bar=False,
+        normalize_embeddings=True,
+        convert_to_numpy=True,
+    )
+
+    # Сравниваем каждый документ с вариантами запроса (перевод и оригинал)
+    # и берём максимальную близость.
+    similarities = document_vectors @ query_vectors.T
+    scores = similarities.max(axis=1)
+
+    ranked = []
+    for paper, score in zip(papers, scores):
+        # Процент — удобная шкала отображения cosine similarity,
+        # это не вероятность и не научная оценка качества статьи.
+        paper["relevance"] = round(float(score) * 100, 1)
+        ranked.append(paper)
+
+    ranked.sort(key=lambda paper: paper["relevance"], reverse=True)
+    return ranked
+
+
 def search_openalex(
     query: str,
     max_results: int = 5,
     *,
     include_sources: bool = False,
 ) -> List[Dict[str, Any]]:
+    """Ищет публикации в OpenAlex и сортирует их по семантической близости."""
     query = (query or "").strip()
     if not query:
         return []
@@ -211,37 +244,32 @@ def search_openalex(
     except (TypeError, ValueError):
         max_results = 5
 
-    english_query = translate_to_english(query)
+    translated_query = translate_to_english(query)
     query_variants = list(dict.fromkeys(
-        q.strip() for q in (english_query, query) if q and q.strip()
+        value.strip()
+        for value in (translated_query, query)
+        if value and value.strip()
     ))
 
+    # Запрашиваем расширенную выборку, потому что после семантической
+    # сортировки порядок OpenAlex уже не является окончательным.
+    fetch_limit = min(max(max_results * 10, 50), 100)
     collected: List[Dict[str, Any]] = []
 
     for search_query in query_variants:
-        collected.extend(_search_openalex(search_query, max_results * 5))
+        collected.extend(_search_openalex(search_query, fetch_limit))
 
-    # Удаляем дубликаты, сохраняя запись с наиболее полной аннотацией.
     unique: Dict[str, Dict[str, Any]] = {}
     for paper in collected:
         key = _dedup_key(paper)
         if not key:
             continue
+
         previous = unique.get(key)
         if previous is None or len(paper.get("abstract", "")) > len(previous.get("abstract", "")):
             unique[key] = paper
 
-    ranked = []
-    for paper in unique.values():
-        score = _relevance_score(paper, query_variants)
-        paper["relevance"] = round(score, 1)
-        ranked.append(paper)
-
-    best_terms = max((_query_terms(q) for q in query_variants), key=len, default=[])
-    threshold = 55 if len(best_terms) <= 4 else 40
-    ranked = [paper for paper in ranked if paper["relevance"] >= threshold]
-
-    ranked.sort(key=lambda paper: paper["relevance"], reverse=True)
+    ranked = _semantic_rerank(list(unique.values()), query_variants)
 
     if not include_sources:
         for paper in ranked:
@@ -256,7 +284,7 @@ def search_semantic_scholar(
     *,
     include_sources: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Совместимость со старым main.py; фактически ищет только в OpenAlex."""
+    """Старое имя функции сохранено для совместимости с main.py."""
     return search_openalex(
         query,
         max_results=max_results,
