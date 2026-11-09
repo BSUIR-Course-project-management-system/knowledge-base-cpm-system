@@ -5,7 +5,7 @@ from typing import Any
 
 def _upstream_error(response: httpx.Response) -> HTTPException:
     try:
-        detail = response.json
+        detail = response.json()
     except ValueError:
         detail = response.text or response.reason_phrase
 
