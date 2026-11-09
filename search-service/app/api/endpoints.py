@@ -2,6 +2,7 @@ import json
 import logging
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.concurrency import run_in_threadpool
+from starlette.responses import PlainTextResponse
 
 from app.schemas import (
     TopicSearchRequest,
@@ -72,6 +73,10 @@ async def search_by_profile(request: Request, payload: ProfileSearchRequest):
     except Exception as e:
         logger.error(f"Ошибка поиска по профилю: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/health", response_class=PlainTextResponse)
+async def health() -> str:
+    return "ok"
 
 #
 # @router.post("/admin/update-data")
