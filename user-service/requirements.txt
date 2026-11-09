@@ -1,10 +1,13 @@
-fastapi
 email-validator
 psycopg2-binary
 pwdlib[argon2]
 PyJWT[crypto]
-pydantic-settings
 sqlalchemy[asyncio]
-uvicorn
 asyncpg
 alembic
+fastapi==0.109.2
+uvicorn[standard]==0.27.1
+pydantic==2.6.1
+pydantic-settings==2.1.0
+httpx==0.27.0
+

@@ -1,7 +1,7 @@
 import chromadb
 
-from search_module.src.loader import BaseLoader
-from search_module.src.settings import PATH_TO_CHROMA_DB
+from app.search_module.src.loader import BaseLoader
+from app.core.config import settings
 
 
 class DataManager:
@@ -11,7 +11,7 @@ class DataManager:
         """Функция инициализаци"""
         self.data = None
         self.loader = base_loader
-        self.client = chromadb.PersistentClient(path=PATH_TO_CHROMA_DB)
+        self.client = chromadb.PersistentClient(path=settings.PATH_TO_CHROMA_DB)
         self.collection = self.client.get_or_create_collection(name="my_vectors")
 
     def load(self, path: str) -> None:
