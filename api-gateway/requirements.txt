@@ -1,0 +1,5 @@
+fastapi
+httpx
+PyJWT[crypto]
+pydantic-settings
+uvicorn
