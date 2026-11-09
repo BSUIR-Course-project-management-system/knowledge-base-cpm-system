@@ -1,0 +1,23 @@
+import chromadb
+
+from app.search_module.src.loader import BaseLoader
+from app.core.config import settings
+
+
+class DataManager:
+    """Класс управления данными"""
+
+    def __init__(self, base_loader: BaseLoader) -> None:
+        """Функция инициализаци"""
+        self.data = None
+        self.loader = base_loader
+        self.client = chromadb.PersistentClient(path=settings.PATH_TO_CHROMA_DB)
+        self.collection = self.client.get_or_create_collection(name="my_vectors")
+
+    def load(self, path: str) -> None:
+        """Функция загрузки данных"""
+        self.data = self.loader.load(path)
+
+    def filter_by_occupancy(self) -> None:
+        """Функция фильтрации по статусу занятости"""
+        self.data = [item for item in self.data if not item.get("is_used")]
