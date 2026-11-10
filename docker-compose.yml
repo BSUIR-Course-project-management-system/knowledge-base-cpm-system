@@ -3,9 +3,9 @@ services:
     image: postgres:16
     container_name: course_db
     environment:
-      POSTGRES_DB: course_db
-      POSTGRES_USER: default_user
-      POSTGRES_PASSWORD: default_password
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in root .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in root .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in root .env}
     ports:
       - "5437:5432"
     volumes:
