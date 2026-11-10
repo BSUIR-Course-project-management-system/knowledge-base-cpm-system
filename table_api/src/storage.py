@@ -41,7 +41,7 @@ class Storage:
         self._loader: ILoader = JsonLoader()
         self._saver: ISaver = JsonSaver()
         # self._topic_matcher: TopicMatcher = TopicMatcher(
-        #     "search_module/models/all-MiniLM-L6-v2"
+        #     "search_module/models/model"
         # )
 
     def update_data_from_cloud(self):

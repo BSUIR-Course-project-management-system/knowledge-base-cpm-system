@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16
+    container_name: course_db
+    environment:
+      POSTGRES_DB: course_db
+      POSTGRES_USER: default_user
+      POSTGRES_PASSWORD: default_password
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U default_user -d course_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  search-service:
+    build: ./search-service
+    container_name: search-service
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  user-service:
+    build: ./user-service
+    env_file:
+      - ./user-service/.env
+    container_name: user-service
+    depends_on:
+      db:
+        condition: service_healthy
+      search-service:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
