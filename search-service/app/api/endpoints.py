@@ -34,7 +34,11 @@ async def search_by_topic(request: Request, payload: TopicSearchRequest):
     if not manager or not manager.theme_finder:
         raise HTTPException(status_code=503, detail="Search engine is not ready")
 
-    md = payload.max_distance if payload.max_distance is not None else settings.MAX_DISTANCE
+    md = (
+        payload.max_distance
+        if payload.max_distance is not None
+        else settings.MAX_DISTANCE
+    )
 
     try:
         raw_results = await run_in_threadpool(
@@ -43,7 +47,7 @@ async def search_by_topic(request: Request, payload: TopicSearchRequest):
             n_results=payload.n_results,
             max_distance=md,
             is_used=payload.is_used,
-            проверяющий=payload.проверяющий,
+            examiner=payload.examiner,
             sort_by=payload.sort_by,
         )
         return _format_results(raw_results)
@@ -59,7 +63,11 @@ async def search_by_profile(request: Request, payload: ProfileSearchRequest):
         raise HTTPException(status_code=503, detail="Search engine is not ready")
 
     query = " ".join(payload.interests)
-    md = payload.max_distance if payload.max_distance is not None else settings.MAX_DISTANCE
+    md = (
+        payload.max_distance
+        if payload.max_distance is not None
+        else settings.MAX_DISTANCE
+    )
 
     try:
         raw_results = await run_in_threadpool(
@@ -74,9 +82,11 @@ async def search_by_profile(request: Request, payload: ProfileSearchRequest):
         logger.error(f"Ошибка поиска по профилю: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/health", response_class=PlainTextResponse)
 async def health() -> str:
     return "ok"
+
 
 #
 # @router.post("/admin/update-data")

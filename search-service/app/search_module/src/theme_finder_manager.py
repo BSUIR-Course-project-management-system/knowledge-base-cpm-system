@@ -99,16 +99,20 @@ class ThemeFinderManager:
         items = list(zip(docs, dists, metas))
 
         if sort_by == "grade":
+
             def grade_key(item):
                 grade = item[2].get("rounded_final_grade", "")
                 try:
                     return -float(grade)
                 except (ValueError, TypeError):
                     return 0
+
             items.sort(key=grade_key)
         elif sort_by == "date":
+
             def date_key(item):
                 return item[2].get("date_defence", "")
+
             items.sort(key=date_key, reverse=True)
 
         out = {"documents": [[]], "distances": [[]], "metadatas": [[]]}
@@ -126,7 +130,7 @@ class ThemeFinderManager:
         n_results: int = 7,
         max_distance: float = settings.MAX_DISTANCE,
         is_used: Optional[bool] = False,
-        проверяющий: Optional[str] = None,
+        examiner: Optional[str] = None,
         sort_by: Optional[str] = "relevance",
     ) -> Dict[str, Any]:
         if self.theme_finder is None:
@@ -138,7 +142,7 @@ class ThemeFinderManager:
             query,
             n_results=n_results,
             is_used=is_used,
-            проверяющий=проверяющий,
+            examiner=examiner,
         )
         logger.info("Фильтрация по расстоянию")
 

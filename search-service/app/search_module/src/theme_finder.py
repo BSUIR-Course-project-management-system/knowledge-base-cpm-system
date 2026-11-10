@@ -85,13 +85,19 @@ class ThemeFinder:
                     documents_for_storage.append(topic if topic else tech)
                     ids.append(f"{item_id}__tech__{j}")
                     metadatas.append(
-                        self._build_meta(item, field_type="technologies", tech_item=tech)
+                        self._build_meta(
+                            item, field_type="technologies", tech_item=tech
+                        )
                     )
 
         if not texts_for_embedding:
-            raise RuntimeError("Нет данных для индексации (topic и technologies пусты).")
+            raise RuntimeError(
+                "Нет данных для индексации (topic и technologies пусты)."
+            )
 
-        logger.info(f"Кодирование {len(texts_for_embedding)} векторов. Это может занять время...")
+        logger.info(
+            f"Кодирование {len(texts_for_embedding)} векторов. Это может занять время..."
+        )
         embeddings = self.model.encode(
             texts_for_embedding, show_progress_bar=False, normalize_embeddings=True
         ).tolist()
@@ -115,7 +121,7 @@ class ThemeFinder:
         query: str,
         n_results: int = 7,
         is_used: Optional[bool] = None,
-        проверяющий: Optional[str] = None,
+        examiner: Optional[str] = None,
     ) -> Any:
         logger.info(f"Поиск по запросу: {query}")
 
@@ -126,13 +132,15 @@ class ThemeFinder:
         conditions = []
         if is_used is not None:
             conditions.append({"is_used": is_used})
-        if проверяющий and проверяющий.strip():
-            conditions.append({
-                "$or": [
-                    {"curator": проверяющий.strip()},
-                    {"examiner": проверяющий.strip()},
-                ]
-            })
+        if examiner and examiner.strip():
+            conditions.append(
+                {
+                    "$or": [
+                        {"curator": examiner.strip()},
+                        {"examiner": examiner.strip()},
+                    ]
+                }
+            )
 
         where_filter = None
         if len(conditions) == 1:
