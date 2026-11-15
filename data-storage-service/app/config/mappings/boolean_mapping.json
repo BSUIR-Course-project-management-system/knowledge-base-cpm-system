@@ -1,0 +1,14 @@
+{
+  "true": {
+    "истина": true,
+    "true": true,
+    "да": true,
+    "yes": true
+  },
+  "false": {
+    "ложь": false,
+    "false": false,
+    "нет": false,
+    "no": false
+  }
+}
