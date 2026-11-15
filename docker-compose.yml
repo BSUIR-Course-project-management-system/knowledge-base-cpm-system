@@ -12,9 +12,29 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U default_user -d course_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  data-storage-service:
+    build: ./data-storage-service
+    container_name: data-storage-service
+    env_file:
+      - ./data-storage-service/.env
+    environment:
+      DATA_DIR: /data
+      CREDENTIALS_PATH: /secrets/credentials.json
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./data-storage-service/data:/data
+      - ./data-storage-service/secrets:/secrets:ro
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8002/health" ]
+      interval: 30s
+      timeout: 10s
       retries: 5
       start_period: 10s
 
