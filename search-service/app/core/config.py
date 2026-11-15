@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     PATH_TO_MODEL: str = str(MODULE_DIR / "models" / "model")
     MAX_DISTANCE: float = 1.1
     MODEL_NAME: str = "BAAI/bge-m3"
+    DATA_STORAGE_URL: str = "http://data-storage-service:8002"
 
 
 settings = Settings()

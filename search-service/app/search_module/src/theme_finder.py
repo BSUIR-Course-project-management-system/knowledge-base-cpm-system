@@ -43,21 +43,31 @@ class ThemeFinder:
         return clean_meta
 
     def make_collection(self) -> None:
+        """
+        Полностью пересоздаёт коллекцию ChromaDB.
+        Сначала дропает существующую коллекцию, потом создаёт новую
+        и наполняет её данными из DataManager. Это гарантирует,
+        что старые/удалённые темы не остаются в индексе.
+        """
         logger.info("Инициализация создания коллекции векторов")
 
         if not self.data_manager.data:
             raise RuntimeError("Данные в DataManager пусты.")
 
-        collection = self.data_manager.collection
-        data = self.data_manager.data
+
+        client = self.data_manager.client
+        collection_name = self.data_manager.collection.name
 
         try:
-            existing = collection.get()
-            if existing.get("ids"):
-                collection.delete(ids=existing["ids"])
-                logger.debug(f"Удалено {len(existing['ids'])} старых записей")
+            client.delete_collection(name=collection_name)
+            logger.info(f"Старая коллекция '{collection_name}' удалена")
         except Exception as e:
-            logger.warning(f"Очистка не удалась: {e}")
+            logger.info(f"Коллекция '{collection_name}' не найдена, создаём новую: {e}")
+
+        collection = client.get_or_create_collection(name=collection_name)
+        self.data_manager.collection = collection
+
+        data = self.data_manager.data
 
         texts_for_embedding: list[str] = []
         documents_for_storage: list[str] = []

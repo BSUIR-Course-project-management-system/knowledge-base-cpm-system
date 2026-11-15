@@ -63,128 +63,123 @@ TOPICS = [
     TopicOut(
         id="1",
         year=2026,
-        title="База знаний диалоговой системы NIKA",
+        topic="База знаний диалоговой системы NIKA",
         description="Разработка онтологии",
         is_used=True,
         curator="Иванов И.И.",
         examiner="Петров П.П.",
         rounded_final_grade=9,
-        tech_stack=["Python", "OSTIS"],
+        technologies="Python, OSTIS"
     ),
     TopicOut(
         id="2",
         year=2026,
-        title="Интеллектуальный ассистент по источнику данных на основании RAG",
+        topic="Интеллектуальный ассистент по источнику данных на основании RAG",
         description="Разработка интеллектуальной системы, использующей подход Retrieval-Augmented Generation (RAG) для извлечения, анализа и генерации ответов на основе данных из указанного источника. В режиме диалога на естественном языке пользователь задаёт вопросы об учебном материале и организации учебного процесса, а система формирует ответы на основе проверенной и согласованной информации из базы знаний, что повышает достоверность и единообразие предоставляемых сведений. В качестве подхода RAG могут применяться графы знаний, векторный поиск, поиск по ключевым словам и другие методы.",
         is_used=True,
         curator="Сотрудник А.",
         examiner="Сотрудник Б.",
         rounded_final_grade=None,
-        tech_stack=[
-            "RAG",
-            "Графы знаний",
-            "Векторный поиск",
-            "Поиск по ключевым словам",
-        ],
+        technologies="RAG,Графы знаний,Векторный поиск,Поиск по ключевым словам"
     ),
     TopicOut(
         id="3",
         year=2026,
-        title="Персональный ассистент по обучению",
+        topic="Персональный ассистент по обучению",
         description=None,
         is_used=True,
         curator="Сотрудник В.",
         examiner="Сотрудник Г.",
         rounded_final_grade=None,
-        tech_stack=[],
+        technologies=None
     ),
     TopicOut(
         id="4",
         year=2026,
-        title="База знаний ассистента по оформлению научных работ и автоматической проверке уникальности текста",
+        topic="База знаний ассистента по оформлению научных работ и автоматической проверке уникальности текста",
         description="База знаний ассистента по оформлению научных работ и автоматической проверке уникальности текста — включает ГОСТы, правила цитирования, шаблоны оформления и методы обнаружения заимствований для автоматической проверки студенческих статей и курсовых.",
         is_used=True,
         curator="Сотрудник Д.",
         examiner="Сотрудник Е.",
         rounded_final_grade=None,
-        tech_stack=["Логический язык программирования", "LLM"],
+        technologies="Логический язык программирования, LLM"
     ),
     TopicOut(
         id="5",
         year=2026,
-        title="База знаний интеллектуальной обучающей системы по дисциплине «Алгоритмы и структуры данных»",
+        topic="База знаний интеллектуальной обучающей системы по дисциплине «Алгоритмы и структуры данных»",
         description="База знаний интеллектуальной обучающей системы по дисциплине «Алгоритмы и структуры данных» — структурирует определения алгоритмов, примеры кода, типовые задачи, сложности операций и типичные ошибки для адаптивного обучения студентов.",
         is_used=True,
         curator="Сотрудник Ж.",
         examiner="Сотрудник Ж.",
         rounded_final_grade=None,
-        tech_stack=["Логический язык программирования", "LLM"],
+        technologies="Логический язык программирования, LLM",
     ),
     TopicOut(
         id="6",
         year=2026,
-        title="База знаний планировщика питания и совместимости продуктов для студенческой столовой",
+        topic="База знаний планировщика питания и совместимости продуктов для студенческой столовой",
         description=None,
         is_used=True,
         curator="Сотрудник И.",
         examiner="Сотрудник К.",
         rounded_final_grade=None,
-        tech_stack=[],
+        technologies=None,
     ),
     TopicOut(
         id="7",
         year=2026,
-        title="База знаний RAG-системы автоматического выявления фактологических противоречий в неструктурированных данных",
+        topic="База знаний RAG-системы автоматического выявления фактологических противоречий в неструктурированных данных",
         description=None,
         is_used=True,
         curator="Сотрудник Л.",
         examiner="Сотрудник М.",
         rounded_final_grade=None,
-        tech_stack=["RAG"],
+        technologies="RAG"
     ),
     TopicOut(
         id="8",
         year=2026,
-        title="scp-интерпретатор",
+        topic="scp-интерпретатор",
         description="Создание средств для разработки программ на Языке SCP.",
         is_used=True,
         curator="Сотрудник Н.",
         examiner="Сотрудник О.",
         rounded_final_grade=None,
-        tech_stack=["SCP"],
+        technologies="SCP"
     ),
     TopicOut(
         id="9",
         year=2026,
-        title="sc-машина",
+        topic="sc-машина",
         description="Разработка sc-machine - той части платформы OSTIS, которая отвечает за эмуляцию семантической памяти и API доступа к ней.",
         is_used=True,
         curator="Сотрудник П.",
         examiner="Сотрудник Р.",
         rounded_final_grade=None,
-        tech_stack=["OSTIS", "sc-machine"],
+        technologies="OSTIS, sc-machine"
     ),
     TopicOut(
         id="10",
         year=2026,
-        title="ИСС по музыке",
+        topic="ИСС по музыке",
         description="Описание будет добавлено позже",
         is_used=True,
         curator="Сотрудник С.",
         examiner="Сотрудник Т.",
         rounded_final_grade=None,
-        tech_stack=[],
+        technologies=None
     ),
     TopicOut(
         id="11",
         year=2026,
-        title="ИСС по искусству",
+        topic="ИСС по искусству",
         description="Описание будет добавлено позже",
         is_used=True,
         curator="Сотрудник У.",
         examiner="Сотрудник Ф.",
         rounded_final_grade=None,
-        tech_stack=[],
+        technologies=None
     ),
 ]
 
@@ -538,7 +533,7 @@ class Storage:
     def add_topic(
         self,
         *,
-        key_title: str = "ТЕСТ 2026",
+        key_topic: str = "ТЕСТ 2026",
         topic: str,
         description: str = "Описание будет добавлено позже",
         curator: str = "",
@@ -548,8 +543,8 @@ class Storage:
     #     try:
     #         self._parser.append_row_with_format(
     #             spreadsheets_ids=self._parser.get_all_sheets_in_folder(FOLDER_ID),
-    #             key_title=key_title,
-    #             worksheet_title="Темы",
+    #             key_topic=key_topic,
+    #             worksheet_topic="Темы",
     #             row_data=[topic, description, curator, examiner],
     #         )
     #     except Exception:
@@ -558,15 +553,15 @@ class Storage:
     # def remove_topic(
     #     self,
     #     *,
-    #     key_title: str = "ТЕСТ 2026",
+    #     key_topic: str = "ТЕСТ 2026",
     #     topic: str,
     # ):
     #     try:
     #         self._parser.delete_row_by_topic(
     #             spreadsheets_ids=self._parser.get_all_sheets_in_folder(FOLDER_ID),
-    #             key_title=key_title,
-    #             worksheet_title="Темы",
-    #             theme_title=topic,
+    #             key_topic=key_topic,
+    #             worksheet_topic="Темы",
+    #             theme_topic=topic,
     #         )
     #     except Exception:
     #         raise Exception("Ошибка добавления в таблицу")

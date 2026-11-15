@@ -34,14 +34,14 @@ class RefreshResponse(Base):
 class TopicOut(Base):
     id: str
     year: Year
-    title: Name
+    topic: Name
     description: str | None = None
     is_used: bool = False
     curator: str | None = None
     examiner: str | None = None
     date_defence: str | None = None
     rounded_final_grade: int | None = None
-    tech_stack: list[str] = []
+    technologies: str|None = None
 
 
 class TopicsPage(Base):

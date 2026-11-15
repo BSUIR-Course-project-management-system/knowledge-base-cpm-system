@@ -2,8 +2,6 @@ import logging
 from typing import Any, Dict, Optional
 
 from app.search_module.src.data_manager import DataManager
-from app.search_module.src.loader import BaseLoader
-from app.search_module.src.saver import BaseSaver
 from app.search_module.src.theme_finder import ThemeFinder
 from app.core.config import settings
 
@@ -11,45 +9,59 @@ logger = logging.getLogger(__name__)
 
 
 class ThemeFinderManager:
-    def __init__(self, loader: BaseLoader, saver: BaseSaver) -> None:
-        self.loader = loader
-        self.saver = saver
+    def __init__(self) -> None:
         self.data_manager: Optional[DataManager] = None
         self.theme_finder: Optional[ThemeFinder] = None
 
-    def process_data_from_json(
-        self, json_data: str, path_to_data: str = settings.PATH_TO_TEST_JSON
-    ) -> None:
-        logger.info("Начало обработки новых данных")
+    def init_from_db(self) -> None:
         if not self.data_manager:
-            self.data_manager = DataManager(self.loader)
-        self.saver.save(path_to_data, json_data)
-        logger.info(f"Данные сохранены в файл: {path_to_data}")
-        self.data_manager.load(path_to_data)
-        logger.info("Данные загружены в DataManager")
+            self.data_manager = DataManager()
+
+        if self.data_manager.collection.count() > 0:
+            self.data_manager.load_from_collection()
+            self.theme_finder = ThemeFinder(self.data_manager)
+            logger.info(f"Search engine restored from ChromaDB ({self.data_manager.collection.count()} vectors)")
+        else:
+            logger.warning("ChromaDB is empty. Waiting for POST /update-data")
+
+    def process_data(self, data: list[dict]) -> None:
+        logger.info(f"Processing {len(data)} records from data-storage")
+        if not self.data_manager:
+            self.data_manager = DataManager()
+        self.data_manager.set_data(data)
         self.prepare_search()
 
     def prepare_search(self) -> None:
-        if self.data_manager is None:
-            raise RuntimeError("DataManager не инициализирован")
-        try:
-            logger.info("Инициализация поисковика")
-            self.theme_finder = ThemeFinder(self.data_manager)
-            self.theme_finder.make_collection()
-            logger.info("Система поиска готова к работе")
-        except Exception as e:
-            logger.error(f"Не удалось инициализировать поиск: {e}")
-            raise RuntimeError(f"Не удалось инициализировать поиск: {e}")
+        if self.data_manager is None or not self.data_manager.data:
+            raise RuntimeError("DataManager is empty")
+        logger.info("Initializing search engine")
+        self.theme_finder = ThemeFinder(self.data_manager)
+        self.theme_finder.make_collection()
+        logger.info("Search engine is ready")
 
-    def search(self, query: str, n_results: int = 4) -> Dict[str, Any]:
+    def search_relevant(
+            self,
+            query: str,
+            n_results: int = 7,
+            max_distance: float = settings.MAX_DISTANCE,
+            is_used: Optional[bool] = None,
+            examiner: Optional[str] = None,
+            sort_by: Optional[str] = "relevance",
+    ) -> Dict[str, Any]:
         if self.theme_finder is None:
-            raise RuntimeError("Поиск не готов")
-        return self.theme_finder.search(query, n_results=n_results)
+            raise RuntimeError("Search engine is not initialized")
+
+        raw_results = self.theme_finder.search(
+            query, n_results=n_results, is_used=is_used, examiner=examiner
+        )
+        filtered = self.filter_results_by_distance(raw_results, max_distance)
+        filtered = self._deduplicate_by_original_id(filtered)
+        filtered = self._sort_results(filtered, sort_by)
+        return filtered
 
     def filter_results_by_distance(
-        self, results: Dict[str, Any], max_distance: float = settings.MAX_DISTANCE
+            self, results: Dict[str, Any], max_distance: float = settings.MAX_DISTANCE
     ) -> Dict[str, Any]:
-        logger.info("Проверка расстояний у каждой темы")
         docs = results.get("documents", [[]])[0]
         dists = results.get("distances", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
@@ -60,8 +72,6 @@ class ThemeFinderManager:
                 filtered["documents"][0].append(doc)
                 filtered["distances"][0].append(dist)
                 filtered["metadatas"][0].append(meta)
-
-        logger.info("Темы отфильтрованы")
         return filtered
 
     def _deduplicate_by_original_id(self, results: Dict[str, Any]) -> Dict[str, Any]:
@@ -82,12 +92,10 @@ class ThemeFinderManager:
             out["documents"][0].append(doc)
             out["distances"][0].append(dist)
             out["metadatas"][0].append(meta)
-
-        logger.info(f"После дедупликации: {len(out['documents'][0])} уникальных тем")
         return out
 
     def _sort_results(
-        self, results: Dict[str, Any], sort_by: Optional[str]
+            self, results: Dict[str, Any], sort_by: Optional[str]
     ) -> Dict[str, Any]:
         if not sort_by or sort_by == "relevance":
             return results
@@ -95,11 +103,9 @@ class ThemeFinderManager:
         docs = results.get("documents", [[]])[0]
         dists = results.get("distances", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
-
         items = list(zip(docs, dists, metas))
 
         if sort_by == "grade":
-
             def grade_key(item):
                 grade = item[2].get("rounded_final_grade", "")
                 try:
@@ -109,7 +115,6 @@ class ThemeFinderManager:
 
             items.sort(key=grade_key)
         elif sort_by == "date":
-
             def date_key(item):
                 return item[2].get("date_defence", "")
 
@@ -120,34 +125,4 @@ class ThemeFinderManager:
             out["documents"][0].append(doc)
             out["distances"][0].append(dist)
             out["metadatas"][0].append(meta)
-
-        logger.info(f"Результаты отсортированы по: {sort_by}")
         return out
-
-    def search_relevant(
-        self,
-        query: str,
-        n_results: int = 7,
-        max_distance: float = settings.MAX_DISTANCE,
-        is_used: Optional[bool] = False,
-        examiner: Optional[str] = None,
-        sort_by: Optional[str] = "relevance",
-    ) -> Dict[str, Any]:
-        if self.theme_finder is None:
-            raise RuntimeError("Поиск не инициализирован")
-
-        logger.info("Начало поиска тем")
-
-        raw_results = self.theme_finder.search(
-            query,
-            n_results=n_results,
-            is_used=is_used,
-            examiner=examiner,
-        )
-        logger.info("Фильтрация по расстоянию")
-
-        filtered = self.filter_results_by_distance(raw_results, max_distance)
-        filtered = self._deduplicate_by_original_id(filtered)
-        filtered = self._sort_results(filtered, sort_by)
-
-        return filtered

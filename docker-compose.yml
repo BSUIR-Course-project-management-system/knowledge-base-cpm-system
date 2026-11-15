@@ -43,6 +43,8 @@ services:
     container_name: search-service
     ports:
       - "8001:8001"
+    volumes:
+         - chroma_data:/app/app/search_module/chroma_db
     healthcheck:
       test: [ "CMD", "curl", "-fsS", "http://localhost:8001/health" ]
       interval: 30s
@@ -54,9 +56,9 @@ services:
     build: ./schedule-service
     container_name: schedule-service
     ports:
-      - "8002:8002"
+      - "8003:8003"
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8002/health"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:8003/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -77,3 +79,4 @@ services:
 
 volumes:
   postgres_data:
+  chroma_data:
