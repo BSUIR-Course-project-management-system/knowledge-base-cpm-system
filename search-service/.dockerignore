@@ -1,0 +1,4 @@
+app/search_module/chroma_db
+app/search_module/data
+__pycache__
+*.pyc

@@ -238,6 +238,7 @@ class ProgramCLI(cmd.Cmd):
             console.print("\n[bold yellow] Удаление прервано пользователем.[/]")
             return
         except Exception as e:
+            is_success = False
             console.print(f"[bold red] Ошибка в процессе удаления: {e}[/]")
         if is_success:
             console.print("[bold green]Успешное удаление!")
@@ -506,17 +507,13 @@ class ProgramCLI(cmd.Cmd):
         with console.status(
             "[bold green]Скачивание данных из облака...", spinner="aesthetic"
         ) as status:
-            try:
-                self._table_module.update_data_from_cloud()
-                status.update("[bold yellow]Распаковка таблиц...")
-                status.update("[bold yellow]Упорно парсим в JSON...")
-                is_success = True
-                self._is_relevant = True
-            except Exception as e:
-                console.print(
-                    "[bold yellow]Непредвиденная ошибка при загрузке данных.[/] \n[yellow]Попробуйте еще раз или обратитесь к разработчикам :)[/]"
-                )
-                console.print(f"[bold red]:warning: Ошибка:{e}[/]")
+
+            self._table_module.update_data_from_cloud()
+            status.update("[bold yellow]Распаковка таблиц...")
+            status.update("[bold yellow]Упорно парсим в JSON...")
+            is_success = True
+            self._is_relevant = True
+
         if is_success:
             console.print("[bold green]Успешно! Все данные актуальны!..")
 
