@@ -18,6 +18,33 @@ services:
       retries: 5
       start_period: 10s
 
+  user-service:
+    build: ./user-service
+    env_file:
+      - ./user-service/.env
+    container_name: user-service
+    depends_on:
+      db:
+        condition: service_healthy
+      search-service:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  search-service:
+    build: ./search-service
+    container_name: search-service
+    ports:
+      - "8001:8001"
+    volumes:
+      - chroma_data:/app/app/search_module/chroma_db
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   data-storage-service:
     build: ./data-storage-service
     container_name: data-storage-service
@@ -38,20 +65,6 @@ services:
       retries: 5
       start_period: 10s
 
-  search-service:
-    build: ./search-service
-    container_name: search-service
-    ports:
-      - "8001:8001"
-    volumes:
-         - chroma_data:/app/app/search_module/chroma_db
-    healthcheck:
-      test: [ "CMD", "curl", "-fsS", "http://localhost:8001/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-
   schedule-service:
     build: ./schedule-service
     container_name: schedule-service
@@ -63,19 +76,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-
-  user-service:
-    build: ./user-service
-    env_file:
-      - ./user-service/.env
-    container_name: user-service
-    depends_on:
-      db:
-        condition: service_healthy
-      search-service:
-        condition: service_healthy
-    ports:
-      - "8000:8000"
 
 volumes:
   postgres_data:
