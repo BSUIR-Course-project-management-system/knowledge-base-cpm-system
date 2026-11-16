@@ -53,7 +53,7 @@ async def search_by_topic(request: Request, payload: TopicSearchRequest):
 
 
 @router.post("/search/interests", response_model=SearchResponse)
-async def search_by_profile(request: Request, payload: InterestsSearchRequest):
+async def search_by_interests(request: Request, payload: InterestsSearchRequest):
     """Функция end point для подбора темы по ее набору технологий"""
     manager = request.app.state.manager
     if not manager or not manager.theme_finder:
