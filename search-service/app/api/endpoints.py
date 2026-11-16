@@ -18,6 +18,7 @@ router = APIRouter()
 
 
 def _format_results(raw_results: dict) -> SearchResponse:
+    """Функия форматирования данных"""
     docs = raw_results.get("documents", [[]])[0]
     dists = raw_results.get("distances", [[]])[0]
     metas = raw_results.get("metadatas", [[]])[0]
@@ -30,6 +31,7 @@ def _format_results(raw_results: dict) -> SearchResponse:
 
 @router.post("/search/topic", response_model=SearchResponse)
 async def search_by_topic(request: Request, payload: TopicSearchRequest):
+    """Функция end point для подбора темы по ее тематике"""
     manager = request.app.state.manager
     if not manager or not manager.theme_finder:
         raise HTTPException(status_code=503, detail="Search engine is not ready")
@@ -54,6 +56,7 @@ async def search_by_topic(request: Request, payload: TopicSearchRequest):
 
 @router.post("/search/interests", response_model=SearchResponse)
 async def search_by_profile(request: Request, payload: ProfileSearchRequest):
+    """Функция end point для подбора темы по ее набору технологий"""
     manager = request.app.state.manager
     if not manager or not manager.theme_finder:
         raise HTTPException(status_code=503, detail="Search engine is not ready")
@@ -77,6 +80,7 @@ async def search_by_profile(request: Request, payload: ProfileSearchRequest):
 
 @router.post("/update-data", response_model=UpdateDataResponse)
 async def update_data(request: Request):
+    """Функция end point для обновления данных в ChromaDB"""
     client: httpx.AsyncClient = request.app.state.data_storage_client
     manager = request.app.state.manager
 
@@ -126,8 +130,9 @@ async def update_data(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/topics", summary="Получить все темы (сырой ответ ChromaDB)")
+@router.get("/topics", summary="Получить все темы")
 async def get_all_topics(request: Request):
+    """Функция end point для получения всех тем и информации о каждой в сыром виде"""
     manager = request.app.state.manager
     if not manager or not manager.data_manager:
         raise HTTPException(status_code=503, detail="Database is not ready")
@@ -140,4 +145,5 @@ async def get_all_topics(request: Request):
 
 @router.get("/health", response_class=PlainTextResponse)
 async def health() -> str:
+    """Функция end point для проверки работоспособности сервиса"""
     return "ok"

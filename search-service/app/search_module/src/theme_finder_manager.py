@@ -1,19 +1,22 @@
 import logging
 from typing import Any, Dict, Optional
 
+from app.core.config import settings
 from app.search_module.src.data_manager import DataManager
 from app.search_module.src.theme_finder import ThemeFinder
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 
 class ThemeFinderManager:
+    """Класс для обработки поступающей информации"""
+
     def __init__(self) -> None:
         self.data_manager: Optional[DataManager] = None
         self.theme_finder: Optional[ThemeFinder] = None
 
     def init_from_db(self) -> None:
+        """Функция стартовой инициализации данных"""
         if not self.data_manager:
             self.data_manager = DataManager()
 
@@ -25,6 +28,7 @@ class ThemeFinderManager:
             logger.warning("ChromaDB is empty. Waiting for POST /update-data")
 
     def process_data(self, data: list[dict]) -> None:
+        """Функция инициализации DataManager"""
         logger.info(f"Processing {len(data)} records from data-storage")
         if not self.data_manager:
             self.data_manager = DataManager()
@@ -32,6 +36,7 @@ class ThemeFinderManager:
         self.prepare_search()
 
     def prepare_search(self) -> None:
+        """Функция инициализации ThemeFinder"""
         if self.data_manager is None or not self.data_manager.data:
             raise RuntimeError("DataManager is empty")
         logger.info("Initializing search engine")
@@ -48,6 +53,7 @@ class ThemeFinderManager:
             examiner: Optional[str] = None,
             sort_by: Optional[str] = "relevance",
     ) -> Dict[str, Any]:
+        """Функция для релевантного поиска"""
         if self.theme_finder is None:
             raise RuntimeError("Search engine is not initialized")
 
@@ -62,6 +68,7 @@ class ThemeFinderManager:
     def filter_results_by_distance(
             self, results: Dict[str, Any], max_distance: float = settings.MAX_DISTANCE
     ) -> Dict[str, Any]:
+        """Функция фильтрации по косиносному сходству"""
         docs = results.get("documents", [[]])[0]
         dists = results.get("distances", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
@@ -75,6 +82,7 @@ class ThemeFinderManager:
         return filtered
 
     def _deduplicate_by_original_id(self, results: Dict[str, Any]) -> Dict[str, Any]:
+        """Функция удаления дубликатов"""
         docs = results.get("documents", [[]])[0]
         dists = results.get("distances", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
@@ -97,6 +105,7 @@ class ThemeFinderManager:
     def _sort_results(
             self, results: Dict[str, Any], sort_by: Optional[str]
     ) -> Dict[str, Any]:
+        """Функция сортировки найденного списка тем"""
         if not sort_by or sort_by == "relevance":
             return results
 

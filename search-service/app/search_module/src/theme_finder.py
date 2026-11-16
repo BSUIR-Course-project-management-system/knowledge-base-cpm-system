@@ -4,14 +4,17 @@ from typing import Any, Optional
 import torch
 from sentence_transformers import SentenceTransformer
 
-from app.search_module.src.data_manager import DataManager
 from app.core.config import settings
+from app.search_module.src.data_manager import DataManager
 
 logger = logging.getLogger(__name__)
 
 
 class ThemeFinder:
+    """Класс для реализации логики подбора тем по разным критериям"""
+
     def __init__(self, data_manager: DataManager) -> None:
+        """Функция инициализации"""
         if torch.backends.mps.is_available():
             device = "mps"
         elif torch.cuda.is_available():
@@ -24,8 +27,9 @@ class ThemeFinder:
         self.data_manager = data_manager
 
     def _build_meta(
-        self, item: dict, field_type: str, tech_item: Optional[str] = None
+            self, item: dict, field_type: str, tech_item: Optional[str] = None
     ) -> dict:
+        """Функция построения мета информации о теме"""
         clean_meta: dict = {}
         for k, v in item.items():
             clean_key = k.replace(":", "").strip()
@@ -44,16 +48,14 @@ class ThemeFinder:
 
     def make_collection(self) -> None:
         """
-        Полностью пересоздаёт коллекцию ChromaDB.
-        Сначала дропает существующую коллекцию, потом создаёт новую
-        и наполняет её данными из DataManager. Это гарантирует,
-        что старые/удалённые темы не остаются в индексе.
+        Функция полностью пересоздаёт коллекцию ChromaDB.
+        Сначала удаляет существующую коллекцию, потом создаёт новую
+        и наполняет её данными из DataManager.
         """
         logger.info("Инициализация создания коллекции векторов")
 
         if not self.data_manager.data:
             raise RuntimeError("Данные в DataManager пусты.")
-
 
         client = self.data_manager.client
         collection_name = self.data_manager.collection.name
@@ -127,12 +129,13 @@ class ThemeFinder:
             raise
 
     def search(
-        self,
-        query: str,
-        n_results: int = 7,
-        is_used: Optional[bool] = None,
-        examiner: Optional[str] = None,
+            self,
+            query: str,
+            n_results: int = 7,
+            is_used: Optional[bool] = None,
+            examiner: Optional[str] = None,
     ) -> Any:
+        """Функция для поиска и фильтрации тем"""
         logger.info(f"Поиск по запросу: {query}")
 
         query_emb = self.model.encode(

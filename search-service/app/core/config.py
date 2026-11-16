@@ -7,6 +7,7 @@ MODULE_DIR = BASE_DIR / "app" / "search_module"
 
 
 class Settings(BaseSettings):
+    """Класс настроек сервиса"""
     model_config = SettingsConfigDict(env_file=".env")
 
     PATH_TO_CHROMA_DB: str = str(MODULE_DIR / "chroma_db")
