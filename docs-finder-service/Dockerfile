@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Скачиваем модель во время сборки образа, а не при каждом запуске контейнера.
+# Скачиваем модель во время сборки образа, а не при каждом запуске контейнера
 ARG MODEL_NAME=BAAI/bge-m3
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${MODEL_NAME}', device='cpu')"
 

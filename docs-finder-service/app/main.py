@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Docs Finder Service")
-    # Загружаем модель при старте, чтобы ошибки модели были видны сразу, а первый пользовательский запрос не ждал её загрузки.
+    # Загружаем модель при старте, чтобы ошибки модели были видны сразу, а первый пользовательский запрос не ждал её загрузки
     get_model()
     yield
     logger.info("Stopping Docs Finder Service")
