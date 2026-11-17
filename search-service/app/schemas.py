@@ -13,7 +13,7 @@ class TopicSearchRequest(BaseModel):
     sort_by: Optional[str] = "relevance"
 
 
-class ProfileSearchRequest(BaseModel):
+class InterestsSearchRequest(BaseModel):
     interests: List[str] = Field(..., min_length=1)
     n_results: int = Field(10, ge=1, le=50)
     max_distance: Optional[float] = Field(

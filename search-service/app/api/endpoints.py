@@ -8,9 +8,8 @@ from starlette.responses import PlainTextResponse
 from app.core.config import settings
 from app.schemas import (
     TopicSearchRequest,
-    ProfileSearchRequest,
     SearchResponse,
-    SearchResultItem, UpdateDataResponse,
+    SearchResultItem, UpdateDataResponse, InterestsSearchRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,7 +35,6 @@ async def search_by_topic(request: Request, payload: TopicSearchRequest):
     if not manager or not manager.theme_finder:
         raise HTTPException(status_code=503, detail="Search engine is not ready")
 
-
     md = payload.max_distance if payload.max_distance is not None else settings.MAX_DISTANCE
     try:
         raw_results = await run_in_threadpool(
@@ -55,7 +53,7 @@ async def search_by_topic(request: Request, payload: TopicSearchRequest):
 
 
 @router.post("/search/interests", response_model=SearchResponse)
-async def search_by_profile(request: Request, payload: ProfileSearchRequest):
+async def search_by_interests(request: Request, payload: InterestsSearchRequest):
     """Функция end point для подбора темы по ее набору технологий"""
     manager = request.app.state.manager
     if not manager or not manager.theme_finder:
@@ -74,7 +72,7 @@ async def search_by_profile(request: Request, payload: ProfileSearchRequest):
         )
         return _format_results(raw_results)
     except Exception as e:
-        logger.error(f"Search by profile error: {e}")
+        logger.error(f"Search by interests error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
