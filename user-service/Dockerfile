@@ -12,7 +12,7 @@ COPY migrations ./migrations
 COPY alembic.ini ./
 
 COPY scripts ./scripts
-RUN chmod +x ./scripts/entrypoint.sh
+RUN sed -i 's/\r$//' ./scripts/entrypoint.sh && chmod +x ./scripts/entrypoint.sh
 
 EXPOSE 8000
 
