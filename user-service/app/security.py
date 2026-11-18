@@ -18,12 +18,13 @@ def _now() -> datetime.datetime:
     return datetime.datetime.now(UTC)
 
 
-def generate_access_token(user_id: uuid.UUID, role: str) -> str:
+def generate_access_token(user_id: uuid.UUID, role: str, family_id: str) -> str:
     now = _now()
     payload = {
         "sub": str(user_id),
         "type": "access",
         "role": role,
+        "sid": family_id,
         "exp": now + datetime.timedelta(minutes=int(settings.ACCESS_TTL)),
     }
     return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
@@ -45,6 +46,7 @@ def generate_refresh_token(
     }
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     return token, jti, expires_at
+
 
 def decode_token(token: str) -> Dict:
     try:
