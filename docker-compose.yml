@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in root .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in root .env}
     ports:
-      - "5437:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -26,10 +26,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      search-service:
-        condition: service_healthy
     ports:
       - "8000:8000"
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   search-service:
     build: ./search-service

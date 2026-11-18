@@ -29,6 +29,7 @@ def get_user_repo(session: AsyncSession = Depends(get_session)) -> UserRepositor
 def get_token_repo(session: AsyncSession = Depends(get_session)) -> TokenRepository:
     return TokenRepository(session)
 
+
 def get_profile_repo(session: AsyncSession = Depends(get_session)) -> ProfileRepository:
     return ProfileRepository(session)
 
@@ -37,12 +38,15 @@ def get_service(
     session: AsyncSession = Depends(get_session),
     user_repo: UserRepository = Depends(get_user_repo),
     token_repo: TokenRepository = Depends(get_token_repo),
-    profile_repo: ProfileRepository = Depends(get_profile_repo)
+    profile_repo: ProfileRepository = Depends(get_profile_repo),
 ) -> UserService:
     return UserService(user_repo, token_repo, profile_repo, session)
 
 
-def get_current_user(token:HTTPAuthorizationCredentials = Depends(bearer))->CurrentUserOutSchema:
+def get_current_user(
+    token: HTTPAuthorizationCredentials = Depends(bearer),
+) -> CurrentUserOutSchema:
     payload = decode_token(token.credentials)
-    return CurrentUserOutSchema(user_id=uuid.UUID(payload["sub"]), role=payload["role"])
-
+    return CurrentUserOutSchema(
+        user_id=uuid.UUID(payload["sub"]), role=payload["role"], sid=payload["sid"]
+    )

@@ -123,6 +123,7 @@ class StudentUpdateSchema(BaseModel):
             raise ValueError(f"Too many technologies (max {MAX_TECHNOLOGIES})")
         return cleaned
 
+
 class TeacherUpdateSchema(BaseModel):
     email: EmailStr | None = None
     first_name: str | None = None
@@ -141,7 +142,8 @@ class UserOutSchema(BaseModel):
     student_profile: StudentProfileOut | None = None
     teacher_profile: TeacherProfileOut | None = None
 
+
 class CurrentUserOutSchema(BaseModel):
     user_id: uuid.UUID
     role: str
-
+    sid: str

@@ -10,7 +10,9 @@ from app.schemas import (
     StudentRegistrationSchema,
     TeacherRegistrationSchema,
     TokenCreateSchema,
-    TokenResponseSchema, StudentProfileOut, TeacherProfileOut,
+    TokenResponseSchema,
+    StudentProfileOut,
+    TeacherProfileOut,
 )
 from app.security import (
     decode_token,
@@ -23,11 +25,11 @@ from app.security import (
 
 class UserService:
     def __init__(
-            self,
-            user_repo: UserRepository,
-            token_repo: TokenRepository,
-            profile_repo: ProfileRepository,
-            session: AsyncSession,
+        self,
+        user_repo: UserRepository,
+        token_repo: TokenRepository,
+        profile_repo: ProfileRepository,
+        session: AsyncSession,
     ) -> None:
         self.session = session
         self.user_repo = user_repo
@@ -35,7 +37,7 @@ class UserService:
         self.profile_repo = profile_repo
 
     async def register(
-            self, data: StudentRegistrationSchema | TeacherRegistrationSchema
+        self, data: StudentRegistrationSchema | TeacherRegistrationSchema
     ) -> TokenResponseSchema:
         if data.password != data.password_confirm:
             raise HTTPException(
@@ -82,7 +84,7 @@ class UserService:
             )
 
         family_id = str(uuid.uuid4())
-        access_token = generate_access_token(user.id, user.role)
+        access_token = generate_access_token(user.id, user.role, family_id)
         refresh_token, jti, expires_at = generate_refresh_token(user.id, family_id)
 
         await self.token_repo.create(
@@ -110,7 +112,7 @@ class UserService:
             )
 
         family_id = str(uuid.uuid4())
-        access_token = generate_access_token(user.id, user.role)
+        access_token = generate_access_token(user.id, user.role, family_id)
         refresh_token, jti, expires_at = generate_refresh_token(user.id, family_id)
 
         await self.token_repo.create(
@@ -156,7 +158,7 @@ class UserService:
             user.id,
             family_id=refresh_token.family_id,
         )
-        new_access = generate_access_token(user.id, user.role)
+        new_access = generate_access_token(user.id, user.role, refresh_token.family_id)
 
         await self.token_repo.revoke(jti, new_jti)
         await self.token_repo.create(
@@ -172,9 +174,9 @@ class UserService:
         return TokenResponseSchema(access_token=new_access, refresh_token=new_refresh)
 
     async def list_users(
-            self,
-            limit: int = 20,
-            offset: int = 0,
+        self,
+        limit: int = 20,
+        offset: int = 0,
     ) -> list:
         users = await self.user_repo.list(limit=limit, offset=offset)
         return list(users)
@@ -235,6 +237,11 @@ class UserService:
         await self.user_repo.delete(user_id)
         await self.session.commit()
 
+    async def revoke_by_family(self, family_id: str) -> int:
+        count = await self.token_repo.revoke_family(family_id)
+        await self.session.commit()
+        return count
+
     async def revoke_user_sessions(self, user_id: uuid.UUID) -> int:
         current = await self.user_repo.get_by_id(user_id)
         if current is None:
@@ -247,7 +254,9 @@ class UserService:
         await self.session.commit()
         return count
 
-    async def update_profile(self, user_id: uuid.UUID, **fields) -> StudentProfileOut | TeacherProfileOut:
+    async def update_profile(
+        self, user_id: uuid.UUID, **fields
+    ) -> StudentProfileOut | TeacherProfileOut:
         user = await self.user_repo.get_by_id(user_id)
         if user is None:
             raise HTTPException(
@@ -296,9 +305,21 @@ class UserService:
 
         await self.session.commit()
 
-        return StudentProfileOut(**profile_fields) if user.role == "student" else TeacherProfileOut(**profile_fields)
+        return (
+            StudentProfileOut(**profile_fields)
+            if user.role == "student"
+            else TeacherProfileOut(**profile_fields)
+        )
 
-    async def get_profile(self, user_id: uuid.UUID, role: str) -> StudentProfileOut | TeacherProfileOut:
-        return StudentProfileOut.model_validate(
-            await self.profile_repo.get_student_profile(user_id)) if role == "student" else TeacherProfileOut.model_validate(
-            await self.profile_repo.get_teacher_profile(user_id))
+    async def get_profile(
+        self, user_id: uuid.UUID, role: str
+    ) -> StudentProfileOut | TeacherProfileOut:
+        return (
+            StudentProfileOut.model_validate(
+                await self.profile_repo.get_student_profile(user_id)
+            )
+            if role == "student"
+            else TeacherProfileOut.model_validate(
+                await self.profile_repo.get_teacher_profile(user_id)
+            )
+        )
