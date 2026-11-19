@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     JWT_ALGORITHM: str
 
-    # Urls сервисов и корсы
+    USER_SERVICE_URL: str = "http://user-service:8001"
 
 
 settings = Settings()  # type: ignore
