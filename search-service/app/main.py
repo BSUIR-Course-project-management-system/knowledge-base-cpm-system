@@ -1,15 +1,13 @@
 import logging
-import uvicorn
-
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
+import uvicorn
 from fastapi import FastAPI
 
 from app.api.endpoints import router as api_router
 from app.core.config import settings
-from app.search_module.src.loader import JsonLoader
-from app.search_module.src.saver import JsonSaver
 from app.search_module.src.theme_finder_manager import ThemeFinderManager
 
 logging.basicConfig(
@@ -21,37 +19,31 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Запуск Search Service...")
+    logger.info("Starting Search Service...")
 
-    manager = ThemeFinderManager(loader=JsonLoader(), saver=JsonSaver())
+    app.state.data_storage_client = httpx.AsyncClient(
+        base_url=settings.DATA_STORAGE_URL,
+        timeout=30.0,
+    )
+
+    manager = ThemeFinderManager()
     app.state.manager = manager
-    json_path = Path(settings.PATH_TO_TEST_JSON)
 
-    if json_path.exists():
-        logger.info(f"Найден тестовый JSON: {json_path}")
-        try:
-            manager.data_manager = manager.data_manager or __import__(
-                'app.search_module.src.data_manager', fromlist=['DataManager']
-            ).DataManager(manager.loader)
+    try:
+        manager.init_from_db()
+    except Exception as e:
+        logger.exception(f"Initialization error: {e}")
 
-            manager.data_manager.load(str(json_path))
-
-            logger.info("Инициализация ChromaDB (построение векторов)...")
-            manager.prepare_search()
-            logger.info("Search Service готов к работе!")
-        except Exception as e:
-            logger.error(f"Критическая ошибка при инициализации данных: {e}")
-    else:
-        logger.warning(f"Файл {json_path} не найден! Сервис запущен, но поиск вернет 503.")
-        logger.warning("Используйте POST admin/update-data для загрузки данных.")
-
-    yield
-    logger.info("Остановка Search Service...")
+    try:
+        yield
+    finally:
+        await app.state.data_storage_client.aclose()
+        logger.info("Stopping Search Service...")
 
 
 app = FastAPI(
     title="Search Microservice",
-    description="Сервис поиска тем и рекомендаций",
+    description="Search and recommendations service",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -59,10 +51,18 @@ app = FastAPI(
 app.include_router(api_router)
 
 if __name__ == "__main__":
+    chroma_dir = str(Path(settings.PATH_TO_CHROMA_DB).resolve())
+
     uvicorn.run(
         "app.main:app",
-            host="127.0.0.1",
-            port=8001,
-            reload=True,
-            reload_excludes=["app/search_module/chroma_db/*", "app/search_module/data/*"]
+        host="127.0.0.1",
+        port=8001,
+        reload=True,
+        reload_dirs=["app"],
+        reload_excludes=[
+            f"{chroma_dir}/*",
+            f"{chroma_dir}/**/*",
+            "app/search_module/chroma_db/*",
+            "app/search_module/chroma_db/**/*",
+        ]
     )

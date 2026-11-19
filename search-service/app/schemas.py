@@ -6,18 +6,18 @@ class TopicSearchRequest(BaseModel):
     query: str = Field(..., min_length=1)
     n_results: int = Field(10, ge=1, le=50)
     max_distance: Optional[float] = Field(
-        None, description="Максимальная дистанция (если null — берётся из настроек)"
+        None, description="Максимальная дистанция (если null - берётся из настроек)"
     )
     is_used: Optional[bool] = False
     examiner: Optional[str] = None
     sort_by: Optional[str] = "relevance"
 
 
-class ProfileSearchRequest(BaseModel):
+class InterestsSearchRequest(BaseModel):
     interests: List[str] = Field(..., min_length=1)
     n_results: int = Field(10, ge=1, le=50)
     max_distance: Optional[float] = Field(
-        None, description="Максимальная дистанция (если null — берётся из настроек)"
+        None, description="Максимальная дистанция (если null - берётся из настроек)"
     )
     sort_by: Optional[str] = "relevance"
 
@@ -32,5 +32,7 @@ class SearchResponse(BaseModel):
     results: List[SearchResultItem]
 
 
-class UpdateDataRequest(BaseModel):
-    data: List[Dict[str, Any]] = Field(...)
+class UpdateDataResponse(BaseModel):
+    status: str = Field(..., description="success / partial / error")
+    message: str = Field(..., description="Текст сообщения")
+    updated: int = Field(0, ge=0, description="Количество обноленных записей")
