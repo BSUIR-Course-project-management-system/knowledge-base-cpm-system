@@ -1,6 +1,6 @@
 import httpx
-from fastapi import HTTPException, status
-from typing import Any
+from fastapi import HTTPException, status, Header
+from typing import Any, Dict
 
 
 def _upstream_error(response: httpx.Response) -> HTTPException:
@@ -13,13 +13,17 @@ def _upstream_error(response: httpx.Response) -> HTTPException:
 
 
 async def request_service(
-    method: str, url: str, body: Any | None = None, headers: dict | None = None
+    method: str,
+    url: str,
+    body: Any | None = None,
+    headers: Dict[str, Any] | None = None,
+    params: Dict[str, Any] | None = None,
 ):
 
     async with httpx.AsyncClient() as client:
         try:
             response = await client.request(
-                method=method, url=url, json=body, headers=headers
+                method=method, url=url, json=body, headers=headers, params=params
             )
         except httpx.RequestError as e:
             raise HTTPException(

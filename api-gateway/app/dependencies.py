@@ -16,6 +16,9 @@ def get_current_user(
 
 def require_roles(*roles):
     async def checker(user=Depends(get_current_user)) -> CurrentUserOutSchema:
+        if roles == ("*",):
+            return user
+
         if user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
