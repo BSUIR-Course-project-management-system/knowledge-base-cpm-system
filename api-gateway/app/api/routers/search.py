@@ -36,7 +36,7 @@ async def search_by_interests(
 ):
     profile = await request_service(
         "GET",
-        f"{settings.USER_SERVICE_URL}/auth/me",
+        f"{settings.USER_SERVICE_URL}/me",
         headers=get_proxy_headers(request),
     )
 
@@ -63,6 +63,6 @@ async def update_data(
 ):
     return await request_service(
         "POST",
-        f"{settings.SEARCH_SERVICE_URL}/search/update-data",
+        f"{settings.SEARCH_SERVICE_URL}/update-data",
         headers=get_proxy_headers(request),
     )
