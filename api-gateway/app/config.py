@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     USER_SERVICE_URL: str = "http://user-service:8001"
     SEARCH_SERVICE_URL: str = "http://search-service:8002"
+    DATA_STORAGE_SERVICE: str = "http://data-storage-service:8003"
 
 
 settings = Settings()  # type: ignore
