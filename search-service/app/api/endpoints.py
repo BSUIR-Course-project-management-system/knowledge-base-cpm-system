@@ -9,7 +9,9 @@ from app.core.config import settings
 from app.schemas import (
     TopicSearchRequest,
     SearchResponse,
-    SearchResultItem, UpdateDataResponse, InterestsSearchRequest,
+    SearchResultItem,
+    UpdateDataResponse,
+    InterestsSearchRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,7 +37,11 @@ async def search_by_topic(request: Request, payload: TopicSearchRequest):
     if not manager or not manager.theme_finder:
         raise HTTPException(status_code=503, detail="Search engine is not ready")
 
-    md = payload.max_distance if payload.max_distance is not None else settings.MAX_DISTANCE
+    md = (
+        payload.max_distance
+        if payload.max_distance is not None
+        else settings.MAX_DISTANCE
+    )
     try:
         raw_results = await run_in_threadpool(
             manager.search_relevant,
@@ -60,7 +66,11 @@ async def search_by_interests(request: Request, payload: InterestsSearchRequest)
         raise HTTPException(status_code=503, detail="Search engine is not ready")
 
     query = " ".join(payload.interests)
-    md = payload.max_distance if payload.max_distance is not None else settings.MAX_DISTANCE
+    md = (
+        payload.max_distance
+        if payload.max_distance is not None
+        else settings.MAX_DISTANCE
+    )
 
     try:
         raw_results = await run_in_threadpool(
@@ -92,7 +102,9 @@ async def update_data(request: Request):
 
     try:
         while True:
-            resp = await client.get("/topics", params={"limit": limit, "offset": offset})
+            resp = await client.get(
+                "/topics", params={"limit": limit, "offset": offset}
+            )
             resp.raise_for_status()
             page = resp.json()
             items = page.get("items", [])
@@ -106,10 +118,16 @@ async def update_data(request: Request):
             offset += limit
     except httpx.HTTPStatusError as e:
         logger.error(f"data-storage вернул {e.response.status_code}: {e.response.text}")
-        raise HTTPException(status_code=e.response.status_code, detail=f"data-storage error: {e.response.text}")
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"data-storage error: {e.response.text}",
+        )
     except httpx.RequestError as e:
         logger.error(f"Не удалось дозвониться до data-storage: {e}")
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"data-storage unavailable: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"data-storage unavailable: {e}",
+        )
 
     if not all_items:
         raise HTTPException(status_code=404, detail="data-storage вернул пустой список")
@@ -136,8 +154,7 @@ async def get_all_topics(request: Request):
         raise HTTPException(status_code=503, detail="Database is not ready")
 
     return manager.data_manager.collection.get(
-        where={"field_type": "topic"},
-        include=["documents", "metadatas"]
+        where={"field_type": "topic"}, include=["documents", "metadatas"]
     )
 
 
