@@ -7,7 +7,6 @@ from app.schemas import (
     RefreshResponse,
     CurrentUserOutSchema,
     GroupOut,
-    TopicOut,
     TopicsPage,
     TopicRequest,
 )
@@ -49,7 +48,7 @@ async def storage_status(
 @router.get("/groups", response_model=list[GroupOut])
 async def list_groups(
     request: Request,
-    _: CurrentUserOutSchema = Depends(require_roles("admin")),
+    _: CurrentUserOutSchema = Depends(require_roles("*")),
 ):
     return await request_service(
         "GET",
@@ -62,7 +61,7 @@ async def list_groups(
 async def get_group(
     group_id: str,
     request: Request,
-    _: CurrentUserOutSchema = Depends(require_roles("admin")),
+    _: CurrentUserOutSchema = Depends(require_roles("*")),
 ):
     return await request_service(
         "GET",
@@ -74,10 +73,10 @@ async def get_group(
 @router.get("/topics", response_model=TopicsPage)
 async def list_topics(
     request: Request,
-    params: Annotated[TopicRequest, Query()],
+    params: TopicRequest = Depends(),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    _: CurrentUserOutSchema = Depends(require_roles("admin")),
+    _: CurrentUserOutSchema = Depends(require_roles("*")),
 ):
     return await request_service(
         "GET",
