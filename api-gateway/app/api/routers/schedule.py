@@ -22,6 +22,6 @@ async def generate_schedule(
     return await request_service(
         "POST",
         f"{settings.SCHEDULE_SERVICE}/milestone-schedule",
-        body=schema.model_dump(),
+        body=schema.model_dump(mode="json"),
         headers=get_proxy_headers(request),
     )
