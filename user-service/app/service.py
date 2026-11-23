@@ -282,14 +282,18 @@ class UserService:
         }
 
         if user.role == "student":
-            await self.profile_repo.update_student_profile(user_id, **profile_fields)
+            profile = await self.profile_repo.update_student_profile(
+                user_id, **profile_fields
+            )
         elif user.role == "teacher":
             if "group" in profile_fields or "technologies" in profile_fields:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Teacher cannot have group or technologies.",
                 )
-            await self.profile_repo.update_teacher_profile(user_id, **profile_fields)
+            profile = await self.profile_repo.update_teacher_profile(
+                user_id, **profile_fields
+            )
         else:
             if profile_fields:
                 raise HTTPException(
@@ -297,18 +301,17 @@ class UserService:
                     detail="Admin has no profile.",
                 )
 
-        if fields:
+        if not profile:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Fields not allowed: {', '.join(fields)}",
+                status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found"
             )
 
         await self.session.commit()
 
         return (
-            StudentProfileOut(**profile_fields)
+            StudentProfileOut.model_validate(profile)
             if user.role == "student"
-            else TeacherProfileOut(**profile_fields)
+            else TeacherProfileOut.model_validate(profile)
         )
 
     async def get_profile(
