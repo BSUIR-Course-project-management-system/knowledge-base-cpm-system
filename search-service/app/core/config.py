@@ -18,5 +18,12 @@ class Settings(BaseSettings):
     MODEL_NAME: str = "BAAI/bge-m3"
     DATA_STORAGE_URL: str = "http://data-storage-service:8003"
 
+    OPENALEX_BASE_URL: str = "https://api.openalex.org/works"
+    OPENALEX_MAILTO: str = ""
+    OPENALEX_TIMEOUT: float = 25.0
+    OPENALEX_RETRIES: int = 2
+
+    CANDIDATE_LIMIT: int = 50
+
 
 settings = Settings()
