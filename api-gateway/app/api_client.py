@@ -18,12 +18,18 @@ async def request_service(
     body: Any | None = None,
     headers: Dict[str, Any] | None = None,
     params: Dict[str, Any] | None = None,
+    timeout: int | None = None,
 ):
 
     async with httpx.AsyncClient() as client:
         try:
             response = await client.request(
-                method=method, url=url, json=body, headers=headers, params=params
+                method=method,
+                url=url,
+                json=body,
+                headers=headers,
+                params=params,
+                timeout=(timeout or 30),
             )
         except httpx.RequestError as e:
             raise HTTPException(

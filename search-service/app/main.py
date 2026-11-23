@@ -8,11 +8,11 @@ from fastapi import FastAPI
 
 from app.api.endpoints import router as api_router
 from app.core.config import settings
+from app.services.embedding_service import get_model
 from app.search_module.src.theme_finder_manager import ThemeFinderManager
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Search Service...")
-
+    get_model()
     app.state.data_storage_client = httpx.AsyncClient(
         base_url=settings.DATA_STORAGE_URL,
         timeout=30.0,
@@ -45,7 +45,7 @@ app = FastAPI(
     title="Search Microservice",
     description="Search and recommendations service",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.include_router(api_router)
@@ -64,5 +64,5 @@ if __name__ == "__main__":
             f"{chroma_dir}/**/*",
             "app/search_module/chroma_db/*",
             "app/search_module/chroma_db/**/*",
-        ]
+        ],
     )
