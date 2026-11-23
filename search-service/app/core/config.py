@@ -8,6 +8,7 @@ MODULE_DIR = BASE_DIR / "app" / "search_module"
 
 class Settings(BaseSettings):
     """Класс настроек сервиса"""
+
     model_config = SettingsConfigDict(env_file=".env")
 
     PATH_TO_CHROMA_DB: str = str(MODULE_DIR / "chroma_db")
@@ -15,7 +16,7 @@ class Settings(BaseSettings):
     PATH_TO_MODEL: str = str(MODULE_DIR / "models" / "model")
     MAX_DISTANCE: float = 1.1
     MODEL_NAME: str = "BAAI/bge-m3"
-    DATA_STORAGE_URL: str = "http://data-storage-service:8002"
+    DATA_STORAGE_URL: str = "http://data-storage-service:8003"
 
 
 settings = Settings()
