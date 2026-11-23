@@ -14,20 +14,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ \
- && pip config set global.timeout 120 \
+RUN pip config set global.timeout 120 \
  && pip config set global.retries 10
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir sentence-transformers
+    pip install sentence-transformers
 
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-m3', device='cpu')"
 
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir -r requirements.txt
+    pip install -r requirements.txt
 
 COPY app ./app
 
-EXPOSE 8001
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+EXPOSE 8002
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
