@@ -50,10 +50,13 @@ async def login(data: LoginSchema) -> TokenResponseSchema:
 
 
 @router.post("/auth/logout", response_class=JSONResponse)
-async def logout(_: CurrentUserOutSchema = Depends(require_roles("*"))):
+async def logout(
+    request: Request, _: CurrentUserOutSchema = Depends(require_roles("*"))
+):
     return await request_service(
         "POST",
         f"{settings.USER_SERVICE_URL}/auth/logout",
+        headers=get_proxy_headers(request),
     )
 
 

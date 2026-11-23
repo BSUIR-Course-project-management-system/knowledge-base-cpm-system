@@ -28,7 +28,7 @@ async def storage_refresh(
 ):
     return await request_service(
         "POST",
-        f"{settings.DATA_STORAGE_SERVICE}/refresh",
+        f"{settings.DATA_STORAGE_SERVICE}/cache/refresh",
         headers=get_proxy_headers(request),
     )
 
@@ -40,7 +40,7 @@ async def storage_status(
 ):
     return await request_service(
         "GET",
-        f"{settings.DATA_STORAGE_SERVICE}/status",
+        f"{settings.DATA_STORAGE_SERVICE}/cache/status",
         headers=get_proxy_headers(request),
     )
 
