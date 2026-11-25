@@ -37,3 +37,6 @@ data/
 **data/
 
 migrations
+
+# Build
+build/
