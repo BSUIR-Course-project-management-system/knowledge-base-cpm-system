@@ -1,0 +1,6 @@
+-r requirements.txt
+
+pytest==8.4.2
+pytest-cov==7.1.0
+# TestClient (httpx) нужен только тестам, в рантайме не используется.
+httpx==0.28.1
