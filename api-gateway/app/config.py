@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     DATA_STORAGE_SERVICE: str = "http://data-storage-service:8003"
     SCHEDULE_SERVICE: str = "http://schedule-service:8004"
     EXPLANATORY_NOTE_SERVICE_URL: str = "http://explanatory-note-service:8005"
+    THEME_GENERATOR_SERVICE: str = "http://theme-generator-service:8006"
 
 
 settings = Settings()  # type: ignore
