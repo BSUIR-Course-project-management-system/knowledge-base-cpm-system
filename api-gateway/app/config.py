@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     SEARCH_SERVICE_URL: str = "http://search-service:8002"
     DATA_STORAGE_SERVICE: str = "http://data-storage-service:8003"
     SCHEDULE_SERVICE: str = "http://schedule-service:8004"
+    EXPLANATORY_NOTE_SERVICE_URL: str = "http://explanatory-note-service:8005"
 
 
 settings = Settings()  # type: ignore

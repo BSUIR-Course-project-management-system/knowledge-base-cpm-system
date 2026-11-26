@@ -4,6 +4,7 @@ from app.api.routers import (
     search_router,
     data_storage_router,
     schedule_router,
+    notes_router,
 )
 
 router = APIRouter(prefix="/api")
@@ -12,3 +13,4 @@ router.include_router(user_router)
 router.include_router(search_router)
 router.include_router(data_storage_router)
 router.include_router(schedule_router)
+router.include_router(notes_router)

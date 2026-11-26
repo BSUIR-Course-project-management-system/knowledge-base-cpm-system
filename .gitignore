@@ -41,3 +41,5 @@ migrations
 
 # Build
 build/
+
+*.tex.j2

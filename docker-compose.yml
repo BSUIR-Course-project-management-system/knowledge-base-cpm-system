@@ -34,6 +34,8 @@ services:
         condition: service_healthy
       user-service:
         condition: service_healthy
+      explanatory-note-service:
+        condition: service_healthy
 
   user-service:
     build: ./user-service
@@ -109,13 +111,7 @@ services:
     ports:
       - "8005:8005"
     healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8005/health').status == 200 else 1)",
-        ]
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8005/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
