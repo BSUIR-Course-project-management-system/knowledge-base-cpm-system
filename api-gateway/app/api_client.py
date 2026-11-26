@@ -1,6 +1,6 @@
 import httpx
-from fastapi import HTTPException, status, Header
-from typing import Any, Dict
+from fastapi import HTTPException, status
+from typing import Any, Dict, List, Tuple
 
 
 def _upstream_error(response: httpx.Response) -> HTTPException:
@@ -8,7 +8,6 @@ def _upstream_error(response: httpx.Response) -> HTTPException:
         detail = response.json()
     except ValueError:
         detail = response.text or response.reason_phrase
-
     return HTTPException(status_code=response.status_code, detail=detail)
 
 
@@ -18,19 +17,31 @@ async def request_service(
     body: Any | None = None,
     headers: Dict[str, Any] | None = None,
     params: Dict[str, Any] | None = None,
+    files: List[Tuple[str, Tuple[str, bytes, str]]] | None = None,
     timeout: int | None = None,
-):
+    return_response: bool = False,
+) -> httpx.Response | Any:
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.request(
-                method=method,
-                url=url,
-                json=body,
-                headers=headers,
-                params=params,
-                timeout=(timeout or 30),
-            )
+            if files is not None:
+                response = await client.request(
+                    method=method,
+                    url=url,
+                    files=files,
+                    headers=headers,
+                    params=params,
+                    timeout=(timeout or 60),
+                )
+            else:
+                response = await client.request(
+                    method=method,
+                    url=url,
+                    json=body,
+                    headers=headers,
+                    params=params,
+                    timeout=(timeout or 30),
+                )
         except httpx.RequestError as e:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -40,4 +51,4 @@ async def request_service(
     if response.status_code >= 400:
         raise _upstream_error(response)
 
-    return response.json()
+    return response if return_response else response.json()
