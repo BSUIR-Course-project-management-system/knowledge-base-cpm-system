@@ -97,6 +97,29 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+  explanatory-note-service:
+    build: ./explanatory-note-service
+    container_name: explanatory-note-service
+    env_file:
+      - ./explanatory-note-service/.env
+    environment:
+      OUTPUT_DIR: /app/out
+    volumes:
+      - ./generated-tex:/app/out
+    ports:
+      - "8005:8005"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8005/health').status == 200 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 volumes:
   postgres_data:
