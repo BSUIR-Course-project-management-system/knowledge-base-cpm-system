@@ -25,6 +25,7 @@ logs/
 
 # Ignore program service data:
 data/
+generated-tex/
 
 # Ignore db
 **chroma_db/

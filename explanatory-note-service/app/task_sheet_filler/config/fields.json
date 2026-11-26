@@ -1,0 +1,101 @@
+{
+  "year": {
+    "type": "sys"
+  },
+  "specialty_code": {
+    "type": "sys"
+  },
+  "topic_prefix": {
+    "type": "sys"
+  },
+  "submission_date": {
+    "type": "sys"
+  },
+  "date_task_assign": {
+    "type": "sys"
+  },
+  "semester_numb": {
+    "type": "sys"
+  },
+  "course_project_subject": {
+    "type": "sys"
+  },
+  "department_head": {
+    "type": "sys"
+  },
+  "note_section_prefixes": {
+    "type": "sys_list"
+  },
+  "note_blank_rows": {
+    "type": "sys_int"
+  },
+  "project_system_name": {
+    "type": "req",
+    "role": "student",
+    "source": "student",
+    "max_chars": 90
+  },
+  "student_full_name_long": {
+    "type": "req",
+    "role": "student",
+    "source": "student",
+    "max_chars": 60
+  },
+  "student_fio_short": {
+    "type": "req",
+    "role": "student",
+    "source": "student",
+    "max_chars": 30
+  },
+  "student_group_code": {
+    "type": "req",
+    "role": "student",
+    "source": "student",
+    "max_chars": 10
+  },
+  "student_code": {
+    "type": "req",
+    "role": "student",
+    "source": "student",
+    "max_chars": 3
+  },
+  "curator_fio_short": {
+    "type": "req",
+    "role": "student",
+    "source": "student",
+    "max_chars": 30
+  },
+  "examiner_fio_short": {
+    "type": "req",
+    "role": "student",
+    "source": "student",
+    "max_chars": 30
+  },
+  "source_data_for_project": {
+    "type": "mltrow",
+    "required": false,
+    "role": "student",
+    "max_rows": 7,
+    "default_rows": [
+      "Методическое пособие по курсовому проектированию"
+    ]
+  },
+  "note_sections": {
+    "type": "mltrow",
+    "required": true,
+    "role": "student",
+    "min_rows": 3,
+    "max_rows": 10,
+    "default_rows": [],
+    "format": "{n} {prefix} {text}.", "prefix_from": "note_section_prefixes"
+  },
+  "graphic_material": {
+    "type": "mltrow",
+    "required": false,
+    "role": "student",
+    "max_rows": 9,
+    "default_rows": [
+      "Компьютерная презентация курсового проекта"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+[
+  {
+    "rule_id": "SPL-TEXT-001",
+    "category": "spelling",
+    "element_types": ["document"],
+    "description": "В тексте нет орфографических ошибок (проверка внешним средством)",
+    "requirement_ref": "Руководство, разд. 11; СТП 01-2024, требования к тексту",
+    "severity": "warning",
+    "ambiguous": true,
+    "check": {
+      "type": "spelling_external",
+      "params": {"format": "plain"}
+    }
+  }
+]
