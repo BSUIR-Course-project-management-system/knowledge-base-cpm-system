@@ -124,7 +124,7 @@ services:
     container_name: theme-generator-service
     restart: unless-stopped
     env_file:
-      - .env
+      - ./theme-generator-service/.env
     environment:
       LLM_BASE_URL: http://ollama:11434
     ports:

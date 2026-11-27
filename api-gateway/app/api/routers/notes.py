@@ -26,7 +26,7 @@ async def get_fields(
 ):
     return await request_service(
         "GET",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/fields",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/assignment-sheets/fields",
         headers=get_proxy_headers(request),
     )
 
@@ -38,7 +38,7 @@ async def get_system(
 ):
     return await request_service(
         "GET",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/system",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/assignment-sheets/system",
         headers=get_proxy_headers(request),
     )
 
@@ -51,7 +51,7 @@ async def put_system(
 ):
     return await request_service(
         "PUT",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/system",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/assignment-sheets/system",
         body=payload.model_dump(),
         headers=get_proxy_headers(request),
     )
@@ -65,7 +65,7 @@ async def patch_system(
 ):
     return await request_service(
         "PATCH",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/system",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/assignment-sheets/system",
         body=payload.model_dump(exclude_unset=True),
         headers=get_proxy_headers(request),
     )
@@ -79,7 +79,7 @@ async def generate(
 ):
     return await request_service(
         "POST",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/generate",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/assignment-sheets/generate",
         body=payload.model_dump(),
         headers=get_proxy_headers(request),
     )
@@ -92,7 +92,7 @@ async def list_files(
 ):
     return await request_service(
         "GET",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/files",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/assignment-sheets/files",
         headers=get_proxy_headers(request),
     )
 
@@ -105,7 +105,7 @@ async def download_file(
 ):
     response = await request_service(
         "GET",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/files/{name}",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/assignment-sheets/files/{name}",
         headers=get_proxy_headers(request),
         return_response=True,
     )
@@ -141,7 +141,7 @@ async def check_note(
 
     return await request_service(
         "POST",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/notes:check",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/notes/notes:check",
         files=files_to_send,
         headers=get_proxy_headers(request),
         timeout=60,
@@ -164,6 +164,6 @@ async def get_rules(
 ):
     return await request_service(
         "GET",
-        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/rules",
+        f"{settings.EXPLANATORY_NOTE_SERVICE_URL}/rules/rules",
         headers=get_proxy_headers(request),
     )
